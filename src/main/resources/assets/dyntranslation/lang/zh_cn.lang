@@ -1,0 +1,18 @@
+
+commands.dyntranslation.usage=loadMap 加载配置文件,startRecord 开始记录,endRecord <-n> 停止记录并生成文件 -n 只保存非格式化字符,enable 启用动态翻译,disable 关闭动态翻译,spilt 启用分词,notSpilt 关闭分词
+commands.dyntranslation.error=键入 /translation help 获得更多使用方法
+chat.dyntranslation.record.start=开始记录字符
+chat.dyntranslation.record.saving=停止记录，保存文件中...
+chat.dyntranslation.enable=动态翻译已启动
+chat.dyntranslation.disable=动态翻译已关闭
+chat.dyntranslation.load.succssful=映射文件加载完毕，
+chat.dyntranslation.load.failed=配置文件加载失败，
+chat.dyntranslation.rule.number=条规则已被加载。
+chat.dyntranslation.file.save=录制字符已被保存为：
+chat.dyntranslation.file.save.failed=录制文件保存失败！
+chat.dyntranslation.spilt.disable=关闭分词
+chat.dyntranslation.spilt.enable=启用分词
+chat.dyntranslation.chat.translate.enable=启用聊天栏翻译
+chat.dyntranslation.chat.translate.disable=关闭聊天栏翻译
+translation.key.chat.translate=聊天栏翻译
+translation.key.translate=动态翻译

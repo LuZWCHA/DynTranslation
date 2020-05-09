@@ -1,0 +1,18 @@
+
+commands.dyntranslation.usage=type '/translation help' to get usage
+commands.dyntranslation.error=wrong command,type '/translation help' to get help
+chat.dyntranslation.record.start=start record...
+chat.dyntranslation.record.saving=end record, saving to file...
+chat.dyntranslation.enable=dyntranslation is enabled
+chat.dyntranslation.disable=dyntranslation is disabled
+chat.dyntranslation.load.succssful=config has been loaded,
+chat.dyntranslation.load.failed=failed to load config,
+chat.dyntranslation.rule.number= rules have been created!
+chat.dyntranslation.file.save=record file has been saved to
+chat.dyntranslation.file.save.failed=record file failed to save!
+chat.dyntranslation.spilt.disable=disabled spilt words
+chat.dyntranslation.spilt.enable=enabled spilt words
+chat.dyntranslation.chat.translate.enable=enabled chat-texts' translation
+chat.dyntranslation.chat.translate.disable=disabled chat-texts' translation
+translation.key.chat.translate=chat-texts translate
+translation.key.translate=dyntranslation

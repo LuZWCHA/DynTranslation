@@ -1,0 +1,9 @@
+{
+  "package": "com.nowandfuture.translation.mixins",
+  "mixins": [],
+  "client": ["MixinFontRenderer", "MixinProfiler","MixinGuiUtils","IMixinGuiNewChat"],
+  "server": [],
+  "compatibilityLevel": "JAVA_8",
+  "minVersion": "0.6.11",
+  "refmap": "mixins.translation.refmap.json"
+}

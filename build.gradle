@@ -1,0 +1,112 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven {
+            name = "mirror"
+            url = "http://lss233.littleservice.cn/repositories/minecraft"
+        }
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = 'sponge'
+            url = 'https://repo.spongepowered.org/maven'
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'org.spongepowered:mixingradle:0.6-SNAPSHOT'
+        classpath "com.github.jengelman.gradle.plugins:shadow:4.0.4"
+    }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'com.github.johnrengelman.shadow'
+//Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+
+
+version = "1.3"
+group = "com.nowandfuture.dyntranslation" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "DynTranslation"
+
+sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+compileJava {
+    sourceCompatibility = targetCompatibility = '1.8'
+}
+
+minecraft {
+    version = "1.12.2-14.23.5.2847"
+    runDir = "run"
+    clientJvmArgs += "-Dfml.coreMods.load=com.nowandfuture.translation.LoadingPlugin"
+//    coreMod = "com.nowandfuture.translation.LoadingPlugin"
+
+    mappings = "stable_39"
+}
+
+dependencies {
+
+    provided 'com.github.houbb:segment:0.1.5'
+    provided('com.optimaize.languagedetector:language-detector:0.6')
+    provided('org.spongepowered:mixin:0.8') {
+        exclude module: 'guava'
+        exclude module: 'commons-io'
+        exclude module: 'gson'
+    }
+
+}
+
+sourceSets {
+    main {
+        output.resourcesDir = output.classesDir
+    }
+}
+
+mixin {
+    add sourceSets.main, "mixins.translation.refmap.json"
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+
+        expand 'version': project.version, 'mcversion': project.minecraft.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+
+}
+
+jar {
+    manifest {
+        manifest.attributes([
+                "FMLCorePluginContainsFMLMod": 'true',
+                "FMLCorePlugin": "com.nowandfuture.translation.LoadingPlugin",
+                "TweakClass": "org.spongepowered.asm.launch.MixinTweaker"
+
+        ])
+    }
+
+//    from configurations.provided.asFileTree.files.collect {
+//        zipTree(it)
+//    }
+
+    from configurations.provided.asFileTree.files
+            .collect(){
+                zipTree(it).matching {
+                    exclude("languages.shorttext/*",
+                            "languages/a*",
+                            "languages/k*",
+                            "languages/b*",
+                            "languages/i*",
+                            "languages/m*")
+                }
+            }
+
+}

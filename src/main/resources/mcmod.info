@@ -1,0 +1,16 @@
+[
+{
+  "modid": "dyntranslation",
+  "name": "DynTranslation Mod",
+  "description": "dynamic translate text at runtime",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["nowandfuture"],
+  "credits": "nowandfuture",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
