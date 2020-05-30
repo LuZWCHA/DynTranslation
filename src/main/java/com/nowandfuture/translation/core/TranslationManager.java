@@ -19,6 +19,7 @@ import com.optimaize.langdetect.profiles.LanguageProfileReader;
 import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObject;
 import com.optimaize.langdetect.text.TextObjectFactory;
+import joptsimple.internal.Strings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiChat;
@@ -51,6 +52,8 @@ public enum TranslationManager {
     private LanguageDetector languageDetector;
     private TextObjectFactory textObjectFactory;
 
+    private static final int MAX_RECORD_SIZE = 1000;
+    private static final String WILDCARD_CHARACTER = "*";
     private static final String CONFIG_DIR_NAME = DynTranslationMod.MODID;
     private static final String JSON_MAP_PREFIX = DynTranslationMod.MODID + "_";
     private static final String JSON_MAP_DEFAULT_NAME = JSON_MAP_PREFIX + "default.json";
@@ -222,6 +225,7 @@ public enum TranslationManager {
                         for (File map :
                                 files) {
                             Map<String,Map<String ,String>> newMap = loadMap(map);
+                            Map<String,Map<String,String>> replacedMap = new TreeMap<>(newMap);
                             if(newMap != null){
 
                                 each(newMap, new IVisitor() {
@@ -234,11 +238,11 @@ public enum TranslationManager {
                                             preciseSet.add(orgText);
                                         }
                                         //replace @
-                                        newMap.get(name).put(orgText,translation);
+                                        replacedMap.get(name).put(orgText,translation);
                                     }
                                 });
 
-                                containerFontMap = newMap;
+                                containerFontMap = replacedMap;
                             }
                         }
                     }
@@ -334,7 +338,7 @@ public enum TranslationManager {
                                         if(printFormatChars){
                                             temp.put(text,copyFormat(text));
                                         }
-                                        temp.put(simple,"");
+                                        temp.put(simple, Strings.EMPTY);
                                     }
                                 }
                             }
@@ -432,16 +436,16 @@ public enum TranslationManager {
                 ((currentGui instanceof GuiChat) && profiler.getCurrentSection().isEmpty());
 
         if(!renderInChat){
-            String containerName = "*";
+            String containerName = WILDCARD_CHARACTER;
             if(currentGui != null) containerName = currentGui.getClass().getCanonicalName();
-            if(!profiler.getCurrentSection().isEmpty() || GuiUtilsAccessor.isTooltipRendering()) containerName = "*";
+            if(!profiler.getCurrentSection().isEmpty() || GuiUtilsAccessor.isTooltipRendering()) containerName = WILDCARD_CHARACTER;
 
             String combineName = combine(containerName,text);
             if(start.get() && !end.get() && !searchSet.contains(combineName)) {
                 recordQueue.offer(combineName);
                 searchSet.add(combineName);
 
-                if(recordQueue.size() > 1000){
+                if(recordQueue.size() > MAX_RECORD_SIZE){
                     recordQueue.clear();
                     searchSet.clear();
                 }
@@ -536,7 +540,7 @@ public enum TranslationManager {
         String trans = getTranslation(containerName,text);
 
         if(trans == null) {
-            if (!containerName.equals("*")) {
+            if (!containerName.equals(WILDCARD_CHARACTER)) {
                 trans = translationCache.get(combine(containerName, text));
 
             } else{
@@ -721,7 +725,7 @@ public enum TranslationManager {
     private String getTranslation(@Nonnull String containerName, String text){
         Map<String,String> stringMap = containerFontMap.get(containerName);
         if(stringMap != null) return stringMap.get(text);
-        stringMap = containerFontMap.get("*");
+        stringMap = containerFontMap.get(WILDCARD_CHARACTER);
         if(stringMap != null) return stringMap.get(text);
         return null;
     }

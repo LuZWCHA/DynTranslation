@@ -175,23 +175,14 @@ public class Config {
 
         File file = createConfigFile();
         if(file != null){
-            FileWriter fileWriter = null;
-            try {
-                fileWriter = new FileWriter(file);
+            try (FileWriter fileWriter = new FileWriter(file)){
+
                 Gson gson = new GsonBuilder()
                         .setPrettyPrinting()
                         .create();
                 gson.toJson(config,fileWriter);
             } catch (Exception e) {
                 e.printStackTrace();
-            }finally {
-                if(fileWriter != null) {
-                    try {
-                        fileWriter.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
         }
 
