@@ -1,0 +1,16 @@
+
+modLoader="javafml"
+loaderVersion="[31,)"
+#issueTrackerURL="http://www.baidu.com" #optional
+[[mods]] #mandatory
+modId="dyntranslation"
+version="${file.jarVersion}"
+ # A display name for the mod
+displayName="DynTranslation Mod"
+#displayURL="http://www.baidu.com" #optional
+logoFile="" #optional
+credits="" #optional
+authors="nowandfuture"
+description='''
+This is a Translate mod to translate the item's description or the chat content from one language to another.
+'''

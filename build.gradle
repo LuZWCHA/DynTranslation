@@ -1,0 +1,166 @@
+buildscript {
+    repositories {
+        maven { url = 'http://gradle.otakusaikou.com/releases' }
+        maven { url = 'https://download.mcbbs.net/maven' }
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        maven { url = 'https://maven.aliyun.com/repository/central' }
+        maven { url = 'https://maven.aliyun.com/repository/jcenter' }
+        jcenter()
+        mavenCentral()
+        maven {
+            name = 'sponge'
+            url = 'https://repo.spongepowered.org/maven'
+        }
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+        classpath "com.github.jengelman.gradle.plugins:shadow:4.0.4"
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'org.spongepowered.mixin'
+
+
+group = 'com.nowandfuture.mod'
+archivesBaseName = "${project.archives_base_name}-mc${project.minecraft_version}"
+version = "${project.mod_version}"
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+
+minecraft {
+    mappings channel: 'snapshot', version: '20200514-1.15.1'
+    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+    
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                dyntranslation {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                dyntranslation {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            args '--mod', 'dyntranslation', '--all', '--output', file('src/generated/resources/')
+
+            mods {
+                dyntranslation {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+configurations {
+    shade
+    compile.extendsFrom(shade)
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.15.2-31.2.0'//net.minecraftforge:forge:1.15.2-31.2.0_mapped_snapshot_20200514-1.15.1
+
+    shade ('com.github.houbb:segment:0.1.5')
+    shade ('com.optimaize.languagedetector:language-detector:0.6')
+    implementation ('org.spongepowered:mixin:0.8')
+}
+
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": "dyntranslation",
+            "Specification-Vendor": "nowandfuture",
+            "Specification-Version": "1",
+            "Implementation-Title": project.name,
+            "Implementation-Version": "${version}",
+            "Implementation-Vendor" :"nowandfuture",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+            "MixinConnector": "com.nowandfuture.mod.mixins.DynTransConnector"
+        ])
+    }
+
+//    from configurations.compile.each { dep ->
+//        from(project.zipTree(dep)){
+//            exclude 'META-INF', 'META-INF/**'
+//        }
+//    }
+
+    from{
+//        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.shade.asFileTree.files
+                .collect(){
+                    zipTree(it).matching {
+                        exclude("languages.shorttext/*",
+                                "languages/a*",
+                                "languages/k*",
+                                "languages/b*",
+                                "languages/i*",
+                                "languages/m*")
+                    }
+                }
+    }
+
+}
+
+
+// Example configuration to allow publishing using the maven-publish task
+// This is the preferred method to reobfuscate your jar file
+jar.finalizedBy('reobfJar') 
+// However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
+//publish.dependsOn('reobfJar')
+
+mixin {
+    add sourceSets.main, "mixins.dyntranslation.refmap.json"
+}
+
+
+
+//publishing {
+//    publications {
+//        mavenJava(MavenPublication) {
+//            artifact jar
+//        }
+//    }
+//    repositories {
+//        maven {
+//            url "file:///${project.projectDir}/mcmodsrepo"
+//        }
+//    }
+//}
