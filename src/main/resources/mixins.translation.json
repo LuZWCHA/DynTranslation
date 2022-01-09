@@ -1,0 +1,20 @@
+{
+  "package": "com.nowandfuture.mod.mixins",
+  "required": true,
+  "mixins": [
+
+  ],
+  "client": [
+    "IMixinGuiNewChat",
+    "MixinEmptyProfiler",
+    "MixinFontRenderer",
+    "MixinGuiUtils",
+    "MixinProfiler",
+    "MixinToastToastInstance",
+    "MixinNewChatGui"
+  ],
+  "server": [],
+  "compatibilityLevel": "JAVA_8",
+  "minVersion": "0.8",
+  "refmap": "mixins.dyntranslation.refmap.json"
+}

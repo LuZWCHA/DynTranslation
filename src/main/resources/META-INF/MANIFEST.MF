@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Implementation-Title: DynTranslation
+Implementation-Version: 1.4
+Specification-Vendor: nowandfuture
+Specification-Title: dyntranslation
+Implementation-Timestamp: 2020-11-01T20:05:23+0800
+MixinConnector: com.nowandfuture.mod.mixins.DynTransConnector
+Specification-Version: 1
+Implementation-Vendor: nowandfuture
+
