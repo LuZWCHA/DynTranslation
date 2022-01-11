@@ -14,7 +14,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 
-class HttpGet {
+public class HttpGet {
     protected static final int SOCKET_TIMEOUT = 3000; // 10S
     protected static final String GET = "GET";
 
@@ -122,6 +122,46 @@ class HttpGet {
         }
 
         return input;
+    }
+
+    public static String decode(String input) {
+        if (input == null) {
+            return "";
+        }
+
+        try {
+            return URLEncoder.encode(input, "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        return input;
+    }
+
+    /**
+     * unicode 转字符串
+     * @param in  Unicode 的字符串
+     * @return
+     */
+    public static String unicode2String(final String in)
+    {
+        String working = in;
+        int index;
+        index = working.indexOf("\\u");
+        while(index > -1)
+        {
+            int length = working.length();
+            if(index > (length-6))break;
+            int numStart = index + 2;
+            int numFinish = numStart + 4;
+            String substring = working.substring(numStart, numFinish);
+            int number = Integer.parseInt(substring,16);
+            String stringStart = working.substring(0, index);
+            String stringEnd   = working.substring(numFinish);
+            working = stringStart + ((char)number) + stringEnd;
+            index = working.indexOf("\\u");
+        }
+        return working;
     }
 
     private static TrustManager myX509TrustManager = new X509TrustManager() {

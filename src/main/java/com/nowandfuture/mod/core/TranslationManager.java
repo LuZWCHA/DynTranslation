@@ -12,6 +12,7 @@ import com.nowandfuture.mod.DynTranslationMod;
 import com.nowandfuture.mod.core.util.Utils;
 import com.nowandfuture.mod.gui.CommandGui;
 import com.nowandfuture.mod.utils.MinecraftUtil;
+import com.nowandfuture.translate.MyNMTTransApi;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
 import com.optimaize.langdetect.i18n.LdLocale;
@@ -22,6 +23,7 @@ import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObject;
 import com.optimaize.langdetect.text.TextObjectFactory;
 import joptsimple.internal.Strings;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -40,6 +42,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.nowandfuture.mod.utils.MinecraftUtil.*;
 
@@ -919,7 +922,7 @@ public enum TranslationManager {
                 String string = manager.getNetworkQueue().poll();
 
                 try {
-                    ITranslateApi.TranslateResult result = NetworkTranslateHelper.translate(string, languageCode.toLowerCase().substring(0, 2));
+                    ITranslateApi.TranslateResult<TranslateData> result = NetworkTranslateHelper.translate(string, languageCode.toLowerCase().substring(0, 2));
 
                     if (result.getState() == ITranslateApi.STATE.FAILED) {
                         //do nothing
@@ -937,6 +940,58 @@ public enum TranslationManager {
 
         }
 
+    }
+
+
+    //---------------------------- This part is item name translation using NMT ---------------------------------------
+
+    private final ReentrantLock lock = new ReentrantLock();
+    private FIFOCache<String, String> nmtCache = new FIFOCache<>(MAX_CACHE_SIZE);
+    private Set<String> submitTasks = new HashSet<>();
+
+    public void finishTask(String text, String res) throws InterruptedException {
+        lock.lockInterruptibly();
+        if(res != null) {
+            nmtCache.put(text, res);
+        }
+        submitTasks.remove(text);
+        lock.unlock();
+    }
+
+    public boolean isWaitingRes(String text){
+        return submitTasks.contains(text);
+    }
+
+    public String getNMTTranslation(String text){
+        String trans = nmtCache.get(text);
+        if(trans != null){
+            return trans;
+        }
+
+        if(!submitTasks.contains(text)) {
+            submitTasks.add(text);
+            Minecraft.getInstance().runAsync(() -> {
+                try {
+                    ITranslateApi.TranslateResult<MyNMTTransApi.MyNMTTransRes> result = NetworkTranslateHelper.translateByNMT(text, "en", "zh");
+                    MyNMTTransApi.MyNMTTransRes res = new GsonBuilder().create().fromJson(result.getResult(), MyNMTTransApi.MyNMTTransRes.class);
+                    if (res != null) {
+                        finishTask(text, res.getTranslation().getTo());
+                    }else{
+                        finishTask(text, null);
+                    }
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }finally {
+                    try {
+                        finishTask(text, null);
+                    } catch (InterruptedException ignored) {
+
+                    }
+                }
+            });
+        }
+
+        return text;
     }
 
 }

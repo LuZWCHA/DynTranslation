@@ -22,7 +22,7 @@ public abstract class MixinToastToastInstance<T extends IToast> {
         TranslationManager.INSTANCE.getToastClazz().set(clazz);
     }
 
-    @Inject(method = "render", at=@At("RETURN"))
+    @Inject(method = "render", at=@At("RETURN"), locals = LocalCapture.CAPTURE_FAILSOFT)
     public void inject_return_render(int p_193684_1_, int p_193684_2_, MatrixStack p_193684_3_, CallbackInfoReturnable<Boolean> returnable) {
         TranslationManager.INSTANCE.getToastClazz().set(null);
     }

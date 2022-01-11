@@ -3,13 +3,14 @@ package com.baidu.translate.demo;
 
 
 import com.nowandfuture.mod.core.ITranslateApi;
+import com.nowandfuture.mod.core.TranslationRes;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class BaiduTransApi implements ITranslateApi {
+public class BaiduTransApi implements ITranslateApi<TranslateData> {
     private static final String TRANS_API_HOST = "http://api.fanyi.baidu.com/api/trans/vip/translate";
 
     private String appid;
@@ -21,7 +22,7 @@ public class BaiduTransApi implements ITranslateApi {
     }
 
     @Override
-    public TranslateResult getTransResult(String query, String from, String to) throws UnsupportedEncodingException {
+    public TranslateResult<TranslateData> getTransResult(String query, String from, String to) throws UnsupportedEncodingException {
         Map<String, String> params = buildParams(query, from, to);
         String res = HttpGet.get(TRANS_API_HOST, params);
         if(!Objects.isNull(res)){

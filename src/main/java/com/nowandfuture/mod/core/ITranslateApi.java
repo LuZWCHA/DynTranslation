@@ -1,12 +1,13 @@
 package com.nowandfuture.mod.core;
 
+import com.google.gson.Gson;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
-public interface ITranslateApi {
-    TranslateResult getTransResult(String query, String from, String to) throws UnsupportedEncodingException;
+public interface ITranslateApi<RESULT> {
+    TranslateResult<RESULT> getTransResult(String query, String from, String to) throws UnsupportedEncodingException;
 
 
 
@@ -15,10 +16,12 @@ public interface ITranslateApi {
         FAILED
     }
 
-    class TranslateResult{
+    class TranslateResult<RESULT>{
         private String result;
         private STATE state;
         private Map<String,String> others;
+        //todo
+        private RESULT body;
 
 
         public TranslateResult(@NotNull String result,@NotNull STATE state) {
@@ -33,16 +36,16 @@ public interface ITranslateApi {
             this.others = others;
         }
 
-        public static TranslateResult createSuccessResult(String result){
-            return new TranslateResult(result, STATE.SUCCESS);
+        public static <RESULT>TranslateResult<RESULT> createSuccessResult(String result){
+            return new <RESULT>TranslateResult<RESULT>(result, STATE.SUCCESS);
         }
 
-        public static TranslateResult createFailedResult(){
-            return new TranslateResult("null", STATE.FAILED);
+        public static <RESULT>TranslateResult<RESULT> createFailedResult(){
+            return new <RESULT>TranslateResult<RESULT>("null", STATE.FAILED);
         }
 
-        public static TranslateResult createResult(String result, Map<String, String> others){
-            return new TranslateResult(result, STATE.SUCCESS, others);
+        public static <RESULT>TranslateResult<RESULT> createResult(String result, Map<String, String> others){
+            return new <RESULT>TranslateResult<RESULT>(result, STATE.SUCCESS, others);
         }
 
         public Map<String, String> getOthers() {
