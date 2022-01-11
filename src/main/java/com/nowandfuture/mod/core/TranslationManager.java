@@ -29,6 +29,7 @@ import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.toasts.ToastGui;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.fml.loading.FMLPaths;
@@ -190,6 +191,7 @@ public enum TranslationManager {
             Config.TranslateApisEntity entity = config.getTranslateApis().get(0);
             NetworkTranslateHelper.initApi(entity.getName(), entity.getId(), entity.getKey());
         }
+        NetworkTranslateHelper.initNMTApi();
     }
 
     public void createConfigDir() {
@@ -953,6 +955,11 @@ public enum TranslationManager {
         lock.lockInterruptibly();
         if(res != null) {
             nmtCache.put(text, res);
+            idx = 0;
+        }else{
+            if(idx < waitTimes.length - 1){
+                idx ++;
+            }
         }
         submitTasks.remove(text);
         lock.unlock();
@@ -962,15 +969,21 @@ public enum TranslationManager {
         return submitTasks.contains(text);
     }
 
+    private long lastRequestTime = 0;
+    private static long DEFAULT_REQUEST_LIMIT = 500; // ms
+    private int idx = 0;
+    private long waitTimes[] = {1, 2, 4, 8, 12, 16, 20, 24, 28, 32};
+
     public String getNMTTranslation(String text){
         String trans = nmtCache.get(text);
         if(trans != null){
             return trans;
         }
 
-        if(!submitTasks.contains(text)) {
+        if(!submitTasks.contains(text) && System.currentTimeMillis() - lastRequestTime > DEFAULT_REQUEST_LIMIT * waitTimes[idx]) {
             submitTasks.add(text);
-            Minecraft.getInstance().runAsync(() -> {
+            lastRequestTime = System.currentTimeMillis();
+            Util.getServerExecutor().execute(() -> {
                 try {
                     ITranslateApi.TranslateResult<MyNMTTransApi.MyNMTTransRes> result = NetworkTranslateHelper.translateByNMT(text, "en", "zh");
                     MyNMTTransApi.MyNMTTransRes res = new GsonBuilder().create().fromJson(result.getResult(), MyNMTTransApi.MyNMTTransRes.class);

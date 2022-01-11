@@ -19,6 +19,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.client.gui.GuiUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,41 +38,67 @@ public class RenderHandler {
     @SubscribeEvent
     public void handleClientTick(TickEvent.ClientTickEvent event) {
         String curLanguage = MinecraftUtil.getCurrentLC();
+        TranslationManager manager = TranslationManager.INSTANCE;
         if (event.phase == TickEvent.Phase.START) {
             if (!langCode.equals(curLanguage)) {
                 langCode = curLanguage;
-                TranslationManager.INSTANCE.languageChanged();
+                manager.languageChanged();
             }
-            TranslationManager.INSTANCE.submitTask();
+            manager.submitTask();
         }
     }
 
     @SubscribeEvent
     public void handleItemTooltipEvent(ItemTooltipEvent tooltipEvent) {
         List<ITextComponent> lines = tooltipEvent.getToolTip();
-
+        TranslationManager manager = TranslationManager.INSTANCE;
         for (int i = 0; i < lines.size(); i++) {
             ITextComponent component = lines.get(i);
             String text = component.getUnformattedComponentText();
-            if (TranslationManager.INSTANCE.isEnable()) {
+            if (manager.isEnable()) {
                 if (!text.isEmpty()) {
-                    TranslationRes res = TranslationManager.INSTANCE.translate(text);
-                    text = res.text;
-                    //restore the first line's information
-                    if (res.isTranslated)
-                        lines.set(i, ITextComponent.func_244388_a(text));
+
+                    if(KeyBindHandler.isTranslateKeyDown() && i == 0){
+                        if(manager.isWaitingRes(text)){
+                            lines.add(++i, ITextComponent.func_244388_a(" ..."));
+                        }else {
+                            String res = manager.getNMTTranslation(text);
+                            if (!res.equals(text)) {
+                                lines.add(++i, ITextComponent.func_244388_a(res));
+                            }
+                        }
+
+                    }else {
+                        TranslationRes res = manager.translate(text);
+                        text = res.text;
+                        //restore the first line's information
+                        if (res.isTranslated) {
+                            lines.set(i, ITextComponent.func_244388_a(text));
+                        }
+                    }
                 } else {
                     //This is only for test, if users can translate the .lang, they not need to use this mod to translate
                     if (component instanceof TranslationTextComponent) {
                         String key = ((TranslationTextComponent) component).getKey();
                         if (I18n.hasKey(key)) {
                             String localTranslate = I18n.format(key);
-                            TranslationRes res = TranslationManager.INSTANCE.translate(localTranslate);
-                            text = res.text;
-                            if (res.isTranslated) {
-                                IFormattableTextComponent textComponent = new StringTextComponent(text);
-                                textComponent.func_230530_a_(component.getStyle());
-                                lines.set(i, textComponent);
+                            if(KeyBindHandler.isTranslateKeyDown() && i == 0){
+                                if(manager.isWaitingRes(localTranslate)){
+                                    lines.add(++i, ITextComponent.func_244388_a(" ..."));
+                                }else {
+                                    String res = manager.getNMTTranslation(localTranslate);
+                                    if (!res.equals(localTranslate)) {
+                                        lines.add(++i, ITextComponent.func_244388_a(res));
+                                    }
+                                }
+
+                            }else {
+                                TranslationRes res = manager.translate(localTranslate);
+                                localTranslate = res.text;
+                                //restore the first line's information
+                                if (res.isTranslated) {
+                                    lines.set(i, ITextComponent.func_244388_a(localTranslate));
+                                }
                             }
                         }
                     } else {
@@ -83,16 +110,33 @@ public class RenderHandler {
                                 String key = ((TranslationTextComponent) trTc).getKey();
                                 if (I18n.hasKey(key)) {
                                     String localTranslate = I18n.format(key);
-                                    TranslationRes res = TranslationManager.INSTANCE.translate(localTranslate);
-                                    text = res.text;
-                                    if (res.isTranslated) {
-                                        IFormattableTextComponent textComponent = new StringTextComponent(text);
-                                        textComponent.func_230530_a_(trTc.getStyle());
-                                        siblings.set(j, textComponent);
+                                    boolean keyDown = KeyBindHandler.isTranslateKeyDown();
+                                    if(keyDown && i + j == 0){
+                                        if(manager.isWaitingRes(localTranslate)){
+                                            lines.add(++i, ITextComponent.func_244388_a(" ..."));
+                                        }else {
+                                            String res = manager.getNMTTranslation(localTranslate);
+                                            if (!res.equals(localTranslate)) {
+                                                IFormattableTextComponent textComponent = new StringTextComponent(res);
+                                                textComponent.func_230530_a_(trTc.getStyle());
+                                                lines.add(++j, textComponent);
+                                            }
+                                        }
+
+                                    }else {
+                                        TranslationRes res = manager.translate(localTranslate);
+                                        localTranslate = res.text;
+                                        //restore the first line's information
+                                        if (res.isTranslated) {
+                                            IFormattableTextComponent textComponent = new StringTextComponent(localTranslate);
+                                            textComponent.func_230530_a_(trTc.getStyle());
+                                            siblings.set(j, textComponent);
+                                        }
                                     }
+
                                 }
                             } else {
-                                TranslationRes res = TranslationManager.INSTANCE.translate(trTc.getUnformattedComponentText());
+                                TranslationRes res = manager.translate(trTc.getUnformattedComponentText());
                                 text = res.text;
                                 if (res.isTranslated) {
                                     IFormattableTextComponent textComponent = new StringTextComponent(text);
@@ -130,7 +174,7 @@ public class RenderHandler {
 
                         if (chatLine instanceof TranslationChatLine) {
                             ((TranslationChatLine) chatLine).getOrgText().accept(charConsumer);
-                            Optional<String> res = TranslationManager.INSTANCE.translateChatText(charConsumer.getBuilder().toString());
+                            Optional<String> res = manager.translateChatText(charConsumer.getBuilder().toString());
                             res.ifPresent(((TranslationChatLine) chatLine)::setTranslation);
                         } else {
                             //todo
