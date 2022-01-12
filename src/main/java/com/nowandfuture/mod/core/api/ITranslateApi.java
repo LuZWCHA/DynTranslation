@@ -1,4 +1,4 @@
-package com.nowandfuture.mod.core;
+package com.nowandfuture.mod.core.api;
 
 import com.google.gson.Gson;
 import org.jetbrains.annotations.NotNull;

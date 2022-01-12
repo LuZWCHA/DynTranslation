@@ -1,6 +1,7 @@
-package com.nowandfuture.mod.core;
+package com.nowandfuture.mod.core.util;
 
 import com.baidu.translate.demo.BaiduTransApi;
+import com.nowandfuture.mod.core.api.ITranslateApi;
 import com.nowandfuture.translate.MyNMTTransApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package com.nowandfuture.mod.core;
+package com.nowandfuture.mod.core.util;
 
 import java.util.HashSet;
 import java.util.Set;

@@ -1,6 +1,6 @@
 package com.nowandfuture.mod.mixins;
 
-import com.nowandfuture.mod.core.GuiUtilsAccessor;
+import com.nowandfuture.mod.core.api.GuiUtilsAccessor;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.client.gui.GuiUtils;
 import org.spongepowered.asm.mixin.Mixin;

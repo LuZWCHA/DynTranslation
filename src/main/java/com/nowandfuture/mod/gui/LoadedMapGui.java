@@ -47,7 +47,6 @@ import java.util.stream.Collectors;
 
 public class LoadedMapGui extends ModListScreen {
 
-
     /**
      * @param parentScreen
      */

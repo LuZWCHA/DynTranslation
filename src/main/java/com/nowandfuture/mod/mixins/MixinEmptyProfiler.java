@@ -1,9 +1,8 @@
 package com.nowandfuture.mod.mixins;
 
-import com.nowandfuture.mod.core.IMixinProfiler;
+import com.nowandfuture.mod.core.api.IMixinProfiler;
 import joptsimple.internal.Strings;
 import net.minecraft.profiler.EmptyProfiler;
-import net.minecraft.profiler.Profiler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

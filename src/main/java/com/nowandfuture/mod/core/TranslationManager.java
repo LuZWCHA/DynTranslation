@@ -9,9 +9,17 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.nowandfuture.mod.DynTranslationMod;
+import com.nowandfuture.mod.core.api.GuiUtilsAccessor;
+import com.nowandfuture.mod.core.api.IMixinProfiler;
+import com.nowandfuture.mod.core.api.ITranslateApi;
+import com.nowandfuture.mod.core.cache.FIFOCache;
+import com.nowandfuture.mod.core.cache.LRUCache;
+import com.nowandfuture.mod.core.forgeimpl.ForgeInterfaces;
+import com.nowandfuture.mod.core.mcapi.IMinecraftInterfaces;
+import com.nowandfuture.mod.core.util.ControlCharsUtil;
+import com.nowandfuture.mod.core.util.EnCnCharList;
+import com.nowandfuture.mod.core.util.NetworkTranslateHelper;
 import com.nowandfuture.mod.core.util.Utils;
-import com.nowandfuture.mod.gui.CommandGui;
-import com.nowandfuture.mod.utils.MinecraftUtil;
 import com.nowandfuture.translate.MyNMTTransApi;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
@@ -24,16 +32,6 @@ import com.optimaize.langdetect.text.TextObject;
 import com.optimaize.langdetect.text.TextObjectFactory;
 import joptsimple.internal.Strings;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.toasts.ToastGui;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.fml.loading.FMLPaths;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
@@ -45,10 +43,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.nowandfuture.mod.utils.MinecraftUtil.*;
+import static com.nowandfuture.mod.core.forgeimpl.MinecraftUtil.*;
+
+//import net.minecraft.client.Minecraft;
 
 public enum TranslationManager {
     INSTANCE;
+
+    //---------------------- Forge and Minecraft API --------------------------
+    private final static IMinecraftInterfaces.IMinecraftGame game = new ForgeInterfaces.ForgeMinecraftGame();
+    private final static IMinecraftInterfaces.ILanguage languageManager = new ForgeInterfaces.ForgeLanguage();
+
+    private final IMinecraftInterfaces.IProfiler profilerGet = new ForgeInterfaces.ForgeProfiler();
+    private final IMinecraftInterfaces.IResource resourceGet = new ForgeInterfaces.FMLResource();
+
+
     private final Queue<String> recordQueue;
     //mark weather the words are appeared at the record queue
     private final Set<String> markSet;
@@ -83,7 +92,7 @@ public enum TranslationManager {
     private final AtomicBoolean doTranslate = new AtomicBoolean(true);
     private final AtomicReference<Class> toastClazz = new AtomicReference<>(null);
 
-    private Screen currentGui;
+    private Object currentGui;
     private final IMixinProfiler profiler;
     private ArrayList<File> fileList;
 
@@ -125,7 +134,7 @@ public enum TranslationManager {
             markSet.clear();
             start.set(true);
             end.set(false);
-            notify(I18n.format("chat.dyntranslation.record.start"));
+            notify(languageManager.getTranslation("chat.dyntranslation.record.start"));
         }
     }
 
@@ -133,7 +142,7 @@ public enum TranslationManager {
         if (start.get() && !end.get()) {
             start.set(false);
             end.set(true);
-            notify(I18n.format("chat.dyntranslation.record.saving"));
+            notify(languageManager.getTranslation("chat.dyntranslation.record.saving"));
             saveRecords();
         }
     }
@@ -149,7 +158,7 @@ public enum TranslationManager {
         containerFontMap = new HashMap<>();
         markSet = new HashSet<>();
         preciseMatchSet = new HashSet<>();
-        profiler = (IMixinProfiler) Minecraft.getInstance().getProfiler();
+        profiler = profilerGet.get();
 
         //load all languages:
         List<LanguageProfile> languageProfiles;
@@ -195,7 +204,7 @@ public enum TranslationManager {
     }
 
     public void createConfigDir() {
-        configDir = new File(FMLPaths.CONFIGDIR.get().toAbsolutePath() + "/" + CONFIG_DIR_NAME);
+        configDir = new File(resourceGet.getConfigPath().toAbsolutePath() + "/" + CONFIG_DIR_NAME);
 
         if (!configDir.exists()) {
             try {
@@ -242,9 +251,9 @@ public enum TranslationManager {
         translationCache.clear();
         IOExecutor.execute(new Runnable() {
 
-            final String sm = I18n.format("chat.dyntranslation.load.successful");
-            final String fm = I18n.format("chat.dyntranslation.load.failed");
-            final String m = I18n.format("chat.dyntranslation.rule.number");
+            final String sm = languageManager.getTranslation("chat.dyntranslation.load.successful");
+            final String fm = languageManager.getTranslation("chat.dyntranslation.load.failed");
+            final String m = languageManager.getTranslation("chat.dyntranslation.rule.number");
             private int errorCount = 0;
 
             @Override
@@ -409,10 +418,10 @@ public enum TranslationManager {
 
                         gson.toJson(temp2, fileWriter);
 
-                        TranslationManager.this.notify(I18n.format("chat.dyntranslation.file.save") + file.getName());
+                        TranslationManager.this.notify(languageManager.getTranslation("chat.dyntranslation.file.save") + file.getName());
                     } catch (IOException e) {
                         e.printStackTrace();
-                        TranslationManager.this.notify(I18n.format("chat.dyntranslation.file.save.failed"));
+                        TranslationManager.this.notify(languageManager.getTranslation("chat.dyntranslation.file.save.failed"));
 
                     }
                 }
@@ -464,7 +473,7 @@ public enum TranslationManager {
 
         String curSection = profiler.getCurrentSection();
         boolean renderInChat = PROFILER_CHAT.equals(curSection) ||
-                ((currentGui instanceof ChatScreen));
+                ((game.isChatScreen(currentGui)));
         boolean isRenderToast = toastClazz.get() != null;
 
         if (!renderInChat && doTranslate.get()) {
@@ -557,7 +566,7 @@ public enum TranslationManager {
     }
 
     public Optional<String> translateChatText(String text) {
-        if (!Minecraft.getInstance().isGamePaused()) {
+        if (!game.isGamePause()) {
             String result = getNetworkCache().get(text);
             String noFormat;
 
@@ -616,7 +625,7 @@ public enum TranslationManager {
     }
 
     private void searchTranslation(String containerName, String text) {
-        if (Minecraft.getInstance().isGamePaused()) {
+        if (game.isGamePause()) {
             return;
         }
 
@@ -637,11 +646,9 @@ public enum TranslationManager {
     private String title = "DynTranslation";
 
     private void notify(String text) {
-        if (Minecraft.getInstance().world != null) {
-            title = I18n.format("string.dyntranslation.name");
-            ToastGui toastgui = Minecraft.getInstance().getToastGui();
-            toastgui.clear();
-            toastgui.add(new CommandGui.MyToast(new StringTextComponent(title), new TranslationTextComponent(text)));
+        if (game.isWorldCreated()) {
+            title = languageManager.getTranslation("string.dyntranslation.name");
+            game.notifyByToast(title, text);
         }
     }
 
@@ -649,11 +656,11 @@ public enum TranslationManager {
         this.title = title;
     }
 
-    public void setCurrentGui(@Nullable Screen currentGui) {
+    public void setCurrentGui(@Nullable Object currentGui) {
         this.currentGui = currentGui;
     }
 
-    public Screen getCurrentGui() {
+    public Object getCurrentGui() {
         return currentGui;
     }
 
@@ -662,7 +669,7 @@ public enum TranslationManager {
             translateTaskQueue.clear();
             return;
         }
-        if (Minecraft.getInstance().isGamePaused()) {
+        if (game.isGamePause()) {
             return;
         }
 
@@ -724,8 +731,8 @@ public enum TranslationManager {
 
     public void setEnable(boolean enable) {
         this.enable = enable;
-        String chat = enable ? I18n.format("chat.dyntranslation.enable") :
-                I18n.format("chat.dyntranslation.disable");
+        String chat = enable ? languageManager.getTranslation("chat.dyntranslation.enable") :
+                languageManager.getTranslation("chat.dyntranslation.disable");
         notify(chat);
         saveConfig();
     }
@@ -737,8 +744,8 @@ public enum TranslationManager {
             this.enableSpiltWords = enableSpiltWords;
             translationCache.clear();
             String message = enableSpiltWords ?
-                    I18n.format("chat.dyntranslation.spilt.enable") :
-                    I18n.format("chat.dyntranslation.spilt.disable");
+                    languageManager.getTranslation("chat.dyntranslation.spilt.enable") :
+                    languageManager.getTranslation("chat.dyntranslation.spilt.disable");
             notify(message);
             saveConfig();
         }
@@ -754,7 +761,7 @@ public enum TranslationManager {
         }
         if (enableChatTranslate != this.enableChatTranslate) {
             this.enableChatTranslate = enableChatTranslate;
-            notify(I18n.format(enableChatTranslate ?
+            notify(languageManager.getTranslation(enableChatTranslate ?
                     "chat.dyntranslation.chat.translate.enable" :
                     "chat.dyntranslation.chat.translate.disable"));
             saveConfig();
@@ -842,7 +849,7 @@ public enum TranslationManager {
 
             if (EnCnCharList.extraIdeographicChars(text) != null) {
 
-                final String language = MinecraftUtil.getCurrentLC();
+                final String language = languageManager.getLanguageCode();
                 final List<String> resultList = new LinkedList<>();
 
                 boolean separator;
@@ -909,8 +916,10 @@ public enum TranslationManager {
         }
     }
 
+
     private static class NetworkTranslateTask implements Runnable {
         private final TranslationManager manager = TranslationManager.INSTANCE;
+
 //        private final String string;
 
 //        public NetworkTranslateTask(String string){
@@ -920,7 +929,7 @@ public enum TranslationManager {
         @Override
         public void run() {
             if (manager.enable && manager.enableChatTranslate) {
-                String languageCode = MinecraftUtil.getCurrentLC();
+                String languageCode = languageManager.getLanguageCode();
                 String string = manager.getNetworkQueue().poll();
 
                 try {
@@ -947,19 +956,24 @@ public enum TranslationManager {
 
     //---------------------------- This part is item name translation using NMT ---------------------------------------
 
+    //TODO remove the relationship with minecraft server_executor thread pool.
     private final ReentrantLock lock = new ReentrantLock();
-    private FIFOCache<String, String> nmtCache = new FIFOCache<>(MAX_CACHE_SIZE);
-    private Set<String> submitTasks = new HashSet<>();
+    private final FIFOCache<String, String> nmtCache = new FIFOCache<>(MAX_CACHE_SIZE);
+    private final Set<String> submitTasks = new HashSet<>();
+    //limit the request frequency
+    //failed request will increase the next one to be sent
+    //the time wait is BASE_TIME_WAIT + wait_time * WAIT_TIME_UNIT
+    //for the default case, request_wait_time = 500 + 250 * accumulate_failed_times
+    // and the max wait time is 32 * 250 + 500 = 8.5 seconds
+    private final RequestWait requestWait = RequestWait.DEFAULT();
 
     public void finishTask(String text, String res) throws InterruptedException {
         lock.lockInterruptibly();
         if(res != null) {
             nmtCache.put(text, res);
-            idx = 0;
+            requestWait.request(true);
         }else{
-            if(idx < waitTimes.length - 1){
-                idx ++;
-            }
+            requestWait.request(false);
         }
         submitTasks.remove(text);
         lock.unlock();
@@ -969,21 +983,22 @@ public enum TranslationManager {
         return submitTasks.contains(text);
     }
 
-    private long lastRequestTime = 0;
-    private static long DEFAULT_REQUEST_LIMIT = 500; // ms
-    private int idx = 0;
-    private long waitTimes[] = {1, 2, 4, 8, 12, 16, 20, 24, 28, 32};
-
     public String getNMTTranslation(String text){
         String trans = nmtCache.get(text);
         if(trans != null){
             return trans;
         }
 
-        if(!submitTasks.contains(text) && System.currentTimeMillis() - lastRequestTime > DEFAULT_REQUEST_LIMIT * waitTimes[idx]) {
+        boolean requestNotTooFrequency = requestWait.tryAccept();
+
+        if(!requestNotTooFrequency){
+            long left = requestWait.leftWaitTime();
+            return languageManager.getTranslation("string.dyntranslation.nextrequest.wait", left);
+        }
+
+        if(!submitTasks.contains(text)) {
             submitTasks.add(text);
-            lastRequestTime = System.currentTimeMillis();
-            Util.getServerExecutor().execute(() -> {
+            game.runAtBackground(() -> {
                 try {
                     ITranslateApi.TranslateResult<MyNMTTransApi.MyNMTTransRes> result = NetworkTranslateHelper.translateByNMT(text, "en", "zh");
                     MyNMTTransApi.MyNMTTransRes res = new GsonBuilder().create().fromJson(result.getResult(), MyNMTTransApi.MyNMTTransRes.class);

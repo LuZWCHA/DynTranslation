@@ -21,5 +21,6 @@
     "chat.dyntranslation.chat.translate.enable": "启用聊天栏翻译",
     "chat.dyntranslation.chat.translate.disable": "关闭聊天栏翻译",
     "translation.key.chat.translate": "聊天栏翻译",
-    "string.dyntranslation.name": "动态翻译"
+    "string.dyntranslation.name": "动态翻译",
+    "string.dyntranslation.nextrequest.wait": "等待%s毫秒"
 }

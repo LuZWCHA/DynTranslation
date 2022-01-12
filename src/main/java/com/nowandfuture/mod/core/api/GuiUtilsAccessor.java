@@ -1,4 +1,4 @@
-package com.nowandfuture.mod.core;
+package com.nowandfuture.mod.core.api;
 
 
 import net.minecraftforge.fml.client.gui.GuiUtils;

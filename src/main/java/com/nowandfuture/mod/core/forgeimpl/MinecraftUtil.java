@@ -1,4 +1,4 @@
-package com.nowandfuture.mod.utils;
+package com.nowandfuture.mod.core.forgeimpl;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.LanguageManager;

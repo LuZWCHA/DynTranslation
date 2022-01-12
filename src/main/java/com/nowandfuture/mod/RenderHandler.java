@@ -1,16 +1,14 @@
 package com.nowandfuture.mod;
 
-import com.nowandfuture.mod.core.TranslationChatLine;
 import com.nowandfuture.mod.core.TranslationManager;
 import com.nowandfuture.mod.core.TranslationRes;
 import com.nowandfuture.mod.mixins.IMixinGuiNewChat;
-import com.nowandfuture.mod.utils.CharConsumer;
-import com.nowandfuture.mod.utils.MinecraftUtil;
+import com.nowandfuture.mod.core.forgeimpl.CharConsumer;
+import com.nowandfuture.mod.core.forgeimpl.MinecraftUtil;
 import joptsimple.internal.Strings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ChatLine;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ICharacterConsumer;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.*;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
@@ -19,7 +17,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.client.gui.GuiUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -162,6 +160,7 @@ public class RenderHandler {
 
             if (manager.isEnable()) {
                 for (int i = 0; i < list.size(); i++) {
+                    //get the processor which contain the text strings to render
                     ChatLine<IReorderingProcessor> chatLine = list.get(i);
 
                     if (!(chatLine instanceof TranslationChatLine)) {
@@ -177,7 +176,7 @@ public class RenderHandler {
                             Optional<String> res = manager.translateChatText(charConsumer.getBuilder().toString());
                             res.ifPresent(((TranslationChatLine) chatLine)::setTranslation);
                         } else {
-                            //todo
+                            //TODO
                         }
 
                     }
@@ -186,23 +185,92 @@ public class RenderHandler {
         }
     }
 
-    @SubscribeEvent
-    public void handleChatEvent(ClientChatReceivedEvent event) {
-        ITextComponent component = event.getMessage();
-
-        String text = component.getUnformattedComponentText();
-        if (TranslationManager.INSTANCE.isEnableChatTranslate()) {
-            Optional<String> res = TranslationManager.INSTANCE.translateChatText(text);
-            res.ifPresent(s -> {
-                //todo
-            });
-        }
-    }
+//    @SubscribeEvent
+//    public void handleChatEvent(ClientChatReceivedEvent event) {
+//        ITextComponent component = event.getMessage();
+//
+//        String text = component.getUnformattedComponentText();
+//        if (TranslationManager.INSTANCE.isEnableChatTranslate()) {
+//            Optional<String> res = TranslationManager.INSTANCE.translateChatText(text);
+//            res.ifPresent(s -> {
+//                //todo
+//            });
+//        }
+//    }
 
     @SubscribeEvent(priority = LOWEST)
     public void handleUnloadWorld(WorldEvent.Unload unload) {
         if (unload.getWorld().isRemote()) {
             TranslationManager.INSTANCE.stopTranslateThread();
+        }
+    }
+
+    //TranslationChatLine is a wrapper to wrap the original chat line;
+    //and the translation res will be filled after translator finished the translate task.
+    public static class TranslationChatLine extends ChatLine<IReorderingProcessor> {
+        private final ChatLine<IReorderingProcessor> orgChatLine;
+        private String translationText = Strings.EMPTY;
+        private ChatLine<IReorderingProcessor> translation;
+
+
+        //func_238169_a_() is getStringComponent()
+        public TranslationChatLine(ChatLine<IReorderingProcessor> orgChatLine) {
+            super(0, orgChatLine.func_238169_a_(), 0);
+            this.orgChatLine = orgChatLine;
+        }
+
+        public ChatLine<IReorderingProcessor> getOrgChatLine() {
+            return orgChatLine;
+        }
+
+        public void setTranslationLine(ChatLine<IReorderingProcessor> translation) {
+            this.translation = translation;
+        }
+
+        public void setTranslation(String text){
+            if(!translationText.equals(text)) {
+                translationText = text;
+                IReorderingProcessor ire = IReorderingProcessor.func_242239_a(text, Style.field_240709_b_);
+                translation = new ChatLine<>(orgChatLine.getUpdatedCounter(), ire, orgChatLine.getChatLineID());
+            }
+        }
+
+        public ChatLine<IReorderingProcessor> getTranslation() {
+            return translation;
+        }
+
+        public boolean hasTranslation(){
+            return translation != null;
+        }
+
+        //func_238169_a_() is getStringComponent()
+        @NotNull
+        @Override
+        public IReorderingProcessor func_238169_a_() {
+            if(hasTranslation() && TranslationManager.INSTANCE.isEnable() && TranslationManager.INSTANCE.isEnableChatTranslate())
+                return TranslationManager.INSTANCE.isRetainOrg() ?
+                        IReorderingProcessor.func_242234_a(orgChatLine.func_238169_a_(),translation.func_238169_a_()):
+                        translation.func_238169_a_();
+            else
+                return orgChatLine.func_238169_a_();
+        }
+
+        public IReorderingProcessor getOrgText(){
+            return orgChatLine.func_238169_a_();
+        }
+
+        public IReorderingProcessor getTranslationText(){
+            return translation != null ? translation.func_238169_a_(): null;
+        }
+
+        @Override
+        public int getChatLineID() {
+            return orgChatLine.getChatLineID();
+        }
+
+        @Override
+        public int getUpdatedCounter() {
+            return orgChatLine.getUpdatedCounter();
         }
     }
 }

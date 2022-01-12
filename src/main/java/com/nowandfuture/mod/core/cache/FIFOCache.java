@@ -1,4 +1,4 @@
-package com.nowandfuture.mod.core;
+package com.nowandfuture.mod.core.cache;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package com.nowandfuture.mod.core;
+package com.nowandfuture.mod.core.api;
 
 public interface IMixinProfiler {
     String getCurrentSection();

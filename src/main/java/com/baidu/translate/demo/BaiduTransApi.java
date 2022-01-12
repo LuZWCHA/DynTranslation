@@ -2,8 +2,7 @@ package com.baidu.translate.demo;
 
 
 
-import com.nowandfuture.mod.core.ITranslateApi;
-import com.nowandfuture.mod.core.TranslationRes;
+import com.nowandfuture.mod.core.api.ITranslateApi;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;

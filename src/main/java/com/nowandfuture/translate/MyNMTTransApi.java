@@ -2,11 +2,10 @@ package com.nowandfuture.translate;
 
 
 import com.baidu.translate.demo.HttpGet;
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
-import com.nowandfuture.mod.core.ITranslateApi;
-import com.nowandfuture.mod.core.NetworkTranslateHelper;
+import com.nowandfuture.mod.core.api.ITranslateApi;
+import com.nowandfuture.mod.core.util.NetworkTranslateHelper;
 
 import java.io.IOException;
 import java.io.Serializable;

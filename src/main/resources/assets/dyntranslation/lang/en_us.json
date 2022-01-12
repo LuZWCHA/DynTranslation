@@ -21,5 +21,6 @@
     "chat.dyntranslation.chat.translate.enable": "enabled chat contents' translation",
     "chat.dyntranslation.chat.translate.disable": "disabled contents' translation",
     "translation.key.chat.translate": "Chat translation",
-    "string.dyntranslation.name": "DynTranslation"
+    "string.dyntranslation.name": "DynTranslation",
+    "string.dyntranslation.nextrequest.wait": "wait %s ms"
 }

@@ -1,4 +1,4 @@
-package com.nowandfuture.mod.utils;
+package com.nowandfuture.mod.core.forgeimpl;
 
 import net.minecraft.util.ICharacterConsumer;
 import net.minecraft.util.text.Style;

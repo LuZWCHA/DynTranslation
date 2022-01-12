@@ -1,4 +1,6 @@
-package com.nowandfuture.mod.core;
+package com.nowandfuture.mod.core.util;
+
+import com.nowandfuture.mod.core.ControlChars;
 
 public class ControlCharsUtil {
 
