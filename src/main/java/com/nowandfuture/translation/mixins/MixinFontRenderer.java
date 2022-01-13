@@ -14,12 +14,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import javax.annotation.Nonnull;
+
 @Mixin(FontRenderer.class)
 public abstract class MixinFontRenderer {
 
     @Shadow public abstract int getStringWidth(String text);
-
-    @Shadow public abstract int drawString(String text, float x, float y, int color, boolean dropShadow);
 
     @Inject(
             method = "drawString(Ljava/lang/String;FFIZ)I",
@@ -28,7 +28,10 @@ public abstract class MixinFontRenderer {
             cancellable = true
     )
     private void inject_drawString(String text, float x, float y, int color, boolean dropShadow, CallbackInfoReturnable<Integer> callbackInfo){
+        if(text == null) return;
+
         ControlChars controlChars = ControlChars.EMPTY;
+
         String orgText = removeFormat(text);
         if(TranslationManager.INSTANCE.isEnable()) {
             TranslationRes res = TranslationManager.INSTANCE.translate(text);
@@ -80,14 +83,15 @@ public abstract class MixinFontRenderer {
         {
             i = this.renderString(text, x, y, color, false);
         }
-        callbackInfo.setReturnValue(i);
 
         if(!controlChars.isEMPTY() &&scale != 1) {
             GlStateManager.popMatrix();
         }
+
+        callbackInfo.setReturnValue(i);
     }
 
-    private String removeFormat(String text){
+    private String removeFormat(@Nonnull String text){
         final StringBuilder builder = new StringBuilder();
         for(int i = 0;i < text.length();++i) {
             char c0 = text.charAt(i);

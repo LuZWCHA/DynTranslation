@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(GuiUtils.class)
 public abstract class MixinGuiUtils implements GuiUtilsAccessor {
-    @Shadow
+    @Shadow(remap = false)
     private static ItemStack cachedTooltipStack;
 
     @Override

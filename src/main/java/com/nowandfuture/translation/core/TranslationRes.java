@@ -25,4 +25,10 @@ public class TranslationRes {
         this.controlChars = ControlChars.EMPTY;
         return this;
     }
+
+    public TranslationRes set(TranslationRes res){
+        this.text = res.text;
+        this.controlChars = res.controlChars;
+        return this;
+    }
 }

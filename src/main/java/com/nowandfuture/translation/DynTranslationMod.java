@@ -1,24 +1,19 @@
 package com.nowandfuture.translation;
 
 import com.nowandfuture.translation.setup.IProxy;
-import net.minecraft.client.resources.I18n;
-import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
-import net.minecraftforge.fml.common.ModContainer;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.network.IGuiHandler;
 import org.apache.logging.log4j.Logger;
 
-@Mod(modid = DynTranslationMod.MODID, name = DynTranslationMod.NAME, version = DynTranslationMod.VERSION)
+@Mod(modid = DynTranslationMod.MOD_ID, name = DynTranslationMod.NAME, version = DynTranslationMod.VERSION)
 public class DynTranslationMod
 {
-    public static final String MODID = "dyntranslation";
+    public static final String MOD_ID = "dyntranslation";
     public static final String NAME = "DynTranslation Mod";
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "1.3.3";
 
     @Mod.Instance
     public static DynTranslationMod instance;
