@@ -53,6 +53,6 @@ public class ControlChars {
     public static final ControlChars EMPTY = new ControlChars();
 
     public boolean isEmpty(){
-        return EMPTY != this;
+        return EMPTY == this;
     }
 }

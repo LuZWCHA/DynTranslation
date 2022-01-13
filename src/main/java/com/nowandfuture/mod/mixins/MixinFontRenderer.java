@@ -29,66 +29,15 @@ public abstract class MixinFontRenderer {
 
     private final Vector3f v = new Vector3f();
 
-//    @Inject(
-//            method = "func_238411_a_(Ljava/lang/String;FFIZLnet/minecraft/util/math/vector/Matrix4f;Lnet/minecraft/client/renderer/IRenderTypeBuffer;ZIIZ)I",
-//            at = @At("HEAD"),
-//            locals = LocalCapture.CAPTURE_FAILSOFT,
-//            cancellable = true
-//    )
-//    private void inject_renderString(String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix, IRenderTypeBuffer buffer, boolean transparentIn, int colorBackgroundIn, int packedLight,boolean isbid, CallbackInfoReturnable<Integer> cir){
-//        if(text == null) return;
-//
-//        ControlChars controlChars = ControlChars.EMPTY;
-//        String orgText = removeFormat(text);
-//        if(TranslationManager.INSTANCE.isEnable()) {
-//            TranslationRes res = TranslationManager.INSTANCE.translate(text);
-//            if (res.isTranslated) {
-//                controlChars = res.controlChars;
-//                text = res.text;
-//
-//                float scale = controlChars.getScale();
-//
-//                if(controlChars.isEmpty()){
-//
-//                    if(controlChars.isAutoScale())
-//                        scale = getStringWidth(orgText) / (float)getStringWidth(text);
-//
-//                    if(controlChars.isAutoOffsetX())
-//                        x += ((getStringWidth(orgText) - scale * getStringWidth(text)) / 2);
-//
-//                    if(controlChars.isAutoOffsetX())
-//                        y += (FONT_HEIGHT * (1 - scale))/2;
-//
-//                }
-//
-//                if(controlChars.isEmpty() && scale != 1) {
-//                    x /= scale;
-//                    y /= scale;
-//                    matrix.mul(Matrix4f.makeScale(scale,scale,1));
-//                    v.set(controlChars.getOffsetX(), controlChars.getOffsetY(), 0);
-//                    matrix.translate(v);
-//                }
-//
-//                int num = func_238423_b_(text, x, y, color, dropShadow, matrix, buffer, transparentIn, colorBackgroundIn, packedLight,isbid);
-//
-//                cir.setReturnValue(num);
-//            }
-//        }
-//
-//
-//    }
-
     @Inject(
-            method = "func_238416_a_",
+            method = "func_238411_a_(Ljava/lang/String;FFIZLnet/minecraft/util/math/vector/Matrix4f;Lnet/minecraft/client/renderer/IRenderTypeBuffer;ZIIZ)I",
             at = @At("HEAD"),
             locals = LocalCapture.CAPTURE_FAILSOFT,
             cancellable = true
     )
-    private void inject_renderString2(IReorderingProcessor p_238416_1_, float x, float y, int color, boolean p_238416_5_, Matrix4f matrix, IRenderTypeBuffer p_238416_7_, boolean p_238416_8_, int p_238416_9_, int p_238416_10_, CallbackInfoReturnable<Integer> cir) {
-        CharConsumer charConsumer = new CharConsumer();
-        p_238416_1_.accept(charConsumer);
-        String text = charConsumer.getBuilder().toString();
-
+    private void inject_renderString(String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix, IRenderTypeBuffer buffer, boolean transparentIn, int colorBackgroundIn, int packedLight,boolean isbid, CallbackInfoReturnable<Integer> cir){
+        if(text == null) return;
+        Matrix4f matrix4fCopy = matrix.copy();
         ControlChars controlChars;
         String orgText = removeFormat(text);
         if (TranslationManager.INSTANCE.isEnable()) {
@@ -98,7 +47,7 @@ public abstract class MixinFontRenderer {
                 text = res.text;
                 float scale = controlChars.getScale();
 
-                if (controlChars.isEmpty()) {
+                if (!controlChars.isEmpty()) {
 
                     if (controlChars.isAutoScale())
                         scale = getStringWidth(orgText) / (float) getStringWidth(text);
@@ -110,7 +59,55 @@ public abstract class MixinFontRenderer {
                         y += (FONT_HEIGHT * (1 - scale)) / 2;
                 }
 
-                if (controlChars.isEmpty() && scale != 1) {
+                if (!controlChars.isEmpty() && scale != 1) {
+                    x /= scale;
+                    y /= scale;
+                    matrix.mul(Matrix4f.makeScale(scale, scale, 1));
+                    v.set(controlChars.getOffsetX(), controlChars.getOffsetY(), 0);
+                    matrix.translate(v);
+                }
+
+                int num = func_238423_b_(text, x, y, color, dropShadow, matrix, buffer, transparentIn, colorBackgroundIn, packedLight,isbid);
+                matrix.set(matrix4fCopy);
+                cir.setReturnValue(num);
+            }
+        }
+    }
+
+    @Inject(
+            method = "func_238416_a_",
+            at = @At("HEAD"),
+            locals = LocalCapture.CAPTURE_FAILSOFT,
+            cancellable = true
+    )
+    private void inject_renderString2(IReorderingProcessor p_238416_1_, float x, float y, int color, boolean p_238416_5_, Matrix4f matrix, IRenderTypeBuffer p_238416_7_, boolean p_238416_8_, int p_238416_9_, int p_238416_10_, CallbackInfoReturnable<Integer> cir) {
+        CharConsumer charConsumer = new CharConsumer();
+        p_238416_1_.accept(charConsumer);
+        String text = charConsumer.getBuilder().toString();
+        Matrix4f matrix4fCopy = matrix.copy();
+
+        ControlChars controlChars;
+        String orgText = removeFormat(text);
+        if (TranslationManager.INSTANCE.isEnable()) {
+            TranslationRes res = TranslationManager.INSTANCE.translate(text);
+            if (res.isTranslated) {
+                controlChars = res.controlChars;
+                text = res.text;
+                float scale = controlChars.getScale();
+
+                if (!controlChars.isEmpty()) {
+
+                    if (controlChars.isAutoScale())
+                        scale = getStringWidth(orgText) / (float) getStringWidth(text);
+
+                    if (controlChars.isAutoOffsetX())
+                        x += ((getStringWidth(orgText) - scale * getStringWidth(text)) / 2);
+
+                    if (controlChars.isAutoOffsetX())
+                        y += (FONT_HEIGHT * (1 - scale)) / 2;
+                }
+
+                if (!controlChars.isEmpty() && scale != 1) {
                     x /= scale;
                     y /= scale;
                     matrix.mul(Matrix4f.makeScale(scale, scale, 1));
@@ -121,7 +118,7 @@ public abstract class MixinFontRenderer {
                 IReorderingProcessor rep = IReorderingProcessor.func_242239_a(text, charConsumer.getStyle());
 
                 int num = func_238424_b_(rep, x, y, color, p_238416_5_, matrix, p_238416_7_, p_238416_8_, p_238416_9_, p_238416_10_);
-
+                matrix.set(matrix4fCopy);
                 cir.setReturnValue(num);
             }
         }
@@ -133,7 +130,7 @@ public abstract class MixinFontRenderer {
     protected abstract int func_238424_b_(IReorderingProcessor p_238416_1_, float x, float y, int color, boolean p_238416_5_, Matrix4f matrix, IRenderTypeBuffer p_238416_7_, boolean p_238416_8_, int p_238416_9_, int p_238416_10_);
 
 
-//    @Shadow protected abstract int func_238423_b_(String p_238423_1_, float p_238423_2_, float p_238423_3_, int p_238423_4_, boolean p_238423_5_, Matrix4f p_238423_6_, IRenderTypeBuffer p_238423_7_, boolean p_238423_8_, int p_238423_9_, int p_238423_10_, boolean p_238423_11_);
+    @Shadow protected abstract int func_238423_b_(String p_238423_1_, float p_238423_2_, float p_238423_3_, int p_238423_4_, boolean p_238423_5_, Matrix4f p_238423_6_, IRenderTypeBuffer p_238423_7_, boolean p_238423_8_, int p_238423_9_, int p_238423_10_, boolean p_238423_11_);
 
     private String removeFormat(String text) {
         final StringBuilder builder = new StringBuilder();

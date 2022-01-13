@@ -16,10 +16,7 @@ import com.nowandfuture.mod.core.cache.FIFOCache;
 import com.nowandfuture.mod.core.cache.LRUCache;
 import com.nowandfuture.mod.core.forgeimpl.ForgeInterfaces;
 import com.nowandfuture.mod.core.mcapi.IMinecraftInterfaces;
-import com.nowandfuture.mod.core.util.ControlCharsUtil;
-import com.nowandfuture.mod.core.util.EnCnCharList;
-import com.nowandfuture.mod.core.util.NetworkTranslateHelper;
-import com.nowandfuture.mod.core.util.Utils;
+import com.nowandfuture.mod.core.util.*;
 import com.nowandfuture.translate.MyNMTTransApi;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
@@ -505,7 +502,7 @@ public enum TranslationManager {
             }
 
             //to search the translation from the 2nd-cache first
-            trans = translationCache.get(text);
+            trans = searchGenTranslation(containerName, text);
             if (trans != null) {
                 ControlChars controlChars = ControlCharsUtil.getControlChars(trans);
                 trans = ControlCharsUtil.removeControlChars(trans);
@@ -518,9 +515,9 @@ public enum TranslationManager {
 
             if (strings != null && trans != null) {
                 ControlChars controlChars = ControlCharsUtil.getControlChars(trans);
-                addNewTranslation(containerName, text, trans);
+                addGenTranslation(containerName, text, trans);
 
-                if (controlChars.isEmpty())
+                if (!controlChars.isEmpty())
                     trans = ControlCharsUtil.removeControlChars(trans);
 
                 trans = text.replace(strings, trans);
@@ -529,10 +526,10 @@ public enum TranslationManager {
             }
 
             //if still not find it, we try to find it(not formatted),in the 2nd-cache.
-            trans = translationCache.get(strings);
+            trans = searchGenTranslation(containerName, strings);
             if (trans != null) {
                 ControlChars controlChars = ControlCharsUtil.getControlChars(trans);
-                if (controlChars.isEmpty())
+                if (!controlChars.isEmpty())
                     trans = ControlCharsUtil.removeControlChars(trans);
                 return resObj.set(controlChars, trans);
             }
@@ -544,9 +541,9 @@ public enum TranslationManager {
             trans = getTranslation(containerName, strings);
             if (strings != null && trans != null) {
                 ControlChars controlChars = ControlCharsUtil.getControlChars(trans);
-                addNewTranslation(containerName, text, trans);
+                addGenTranslation(containerName, text, trans);
 
-                if (controlChars.isEmpty())
+                if (!controlChars.isEmpty())
                     trans = ControlCharsUtil.removeControlChars(trans);
 
                 trans = text.replace(strings, trans);
@@ -555,10 +552,40 @@ public enum TranslationManager {
 
             //if no translation find, we have to spilt the word to list of words, find the word's translation
             //one by one, if still noting get, to search the result on the Internet;
+
+            //step one, a simple split by "1234567890." for any language, O((k+d)n) time complexity, 2 >= k >= 1, the d value may reach n/2 when nearly every world has to be replace, the worst case may be O(n^2)
+            //However, at normal case the replace time will very small, always 1 or 2, and the n dose this too.
+            TranslationRes res = getSimpleSpiltTranslation(containerName, text);
+            if(res.text != null){
+                return resObj.set(res);
+            }
+            //step two, a slow way to spilt all worlds and search the result, for English it's fast, but for Jap or Chn it will be very slow.
             searchTranslation(containerName, text);
         }
 
         return resObj.notTranslated();
+    }
+
+    // TODO: 2022/1/14 rewrite the replace to make it O(n)
+    private TranslationRes getSimpleSpiltTranslation(String containerName, String text) {
+
+        LinkedList<SentencePart> sentenceParts = SplitSentenceUtil.spiltByDigit(text);
+        ArrayList<String> digitList = new ArrayList<>(2);
+        String reformatString = SplitSentenceUtil.getSearchString(sentenceParts, text, digitList);
+        String trans = searchLocalTranslation(containerName, reformatString, false);
+        ControlChars controlChars = ControlChars.EMPTY;
+        if(trans != null){
+            controlChars = ControlCharsUtil.getControlChars(trans);
+
+            if (!controlChars.isEmpty())
+                trans = ControlCharsUtil.removeControlChars(trans);
+
+            for (int i = 0; i < digitList.size(); i++) {
+                trans = trans.replace("{"+ i + "}", digitList.get(i));
+            }
+        }
+
+        return new TranslationRes(controlChars, trans);
     }
 
     public String getNetworkTranslate(String unFormattedText) {
@@ -594,31 +621,42 @@ public enum TranslationManager {
         return Optional.empty();
     }
 
-    public synchronized void addNewTranslation(String containerName, String word, String translation) {
+    public synchronized void addGenTranslation(String containerName, String word, String translation) {
         translationCache.put(combine(containerName, word), translation);
     }
 
-    public String searchExitedTranslation(String containerName, String text) {
-        String trans = getTranslation(containerName, text);
+    public String searchGenTranslation(String containerName, String text) {
+        String trans = null;
+        if (!containerName.equals(WILDCARD_CHARACTER)) {
+            trans = translationCache.get(combine(containerName, text));
 
-        if (trans == null) {
-            if (!containerName.equals(WILDCARD_CHARACTER)) {
-                trans = translationCache.get(combine(containerName, text));
-
-            } else {
-                for (String name :
-                        containerFontMap.keySet()) {
-                    trans = translationCache.get(combine(name, text));
-                    if (trans != null) break;
-                }
+        } else {
+            for (String name :
+                    containerFontMap.keySet()) {
+                trans = translationCache.get(combine(name, text));
+                if (trans != null) break;
             }
         }
 
-        if (trans != null)
-            trans = ControlCharsUtil.removeControlChars(text);
-
         return trans;
     }
+
+    public String searchLocalTranslation(String containerName, String text) {
+        return searchLocalTranslation(containerName, text, true);
+    }
+
+    public String searchLocalTranslation(String containerName, String text, boolean removeCC) {
+        String trans = getTranslation(containerName, text);
+
+        if (trans == null) {
+            trans = searchGenTranslation(containerName, text);
+        }
+        if (removeCC && trans != null) {
+            trans = ControlCharsUtil.removeControlChars(trans);
+        }
+        return trans;
+    }
+
 
     public boolean containsAtPreciseSet(String word) {
         return preciseMatchSet.contains(word);
@@ -899,7 +937,7 @@ public enum TranslationManager {
                         if (manager.containsAtPreciseSet(word)) {
                             reconstructString.append(word);
                         } else {
-                            String trans = manager.searchExitedTranslation(containerName, word);
+                            String trans = manager.searchLocalTranslation(containerName, word);
                             if (trans == null) {
                                 trans = word;
                             } else {
@@ -911,7 +949,7 @@ public enum TranslationManager {
                 }
 
                 if (flag)
-                    manager.addNewTranslation(containerName, text, reconstructString.toString());
+                    manager.addGenTranslation(containerName, text, reconstructString.toString());
             }
         }
     }

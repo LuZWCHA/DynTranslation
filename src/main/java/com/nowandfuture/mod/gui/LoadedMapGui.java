@@ -45,6 +45,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+
+// TODO: 2022/1/12 create map view. (can not edit)
 public class LoadedMapGui extends ModListScreen {
 
     /**

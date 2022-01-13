@@ -34,4 +34,8 @@ public class TranslationRes {
         this.isTranslated = false;
         return this;
     }
+
+    public TranslationRes set(TranslationRes res) {
+        return set(res.controlChars, res.text);
+    }
 }
