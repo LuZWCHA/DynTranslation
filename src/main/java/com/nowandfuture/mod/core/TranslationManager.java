@@ -207,7 +207,7 @@ public enum TranslationManager {
             try {
                 boolean flag = configDir.mkdirs();
                 if (!flag) {
-                    throw new RuntimeException("dyntranslation direction not created !");
+                    throw new RuntimeException("dyntranslation folder not created !");
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -222,7 +222,7 @@ public enum TranslationManager {
             try {
                 boolean flag = defaultJson.createNewFile();
                 if (!flag) {
-                    throw new RuntimeException("dyntranslation json file not created !");
+                    throw new RuntimeException("dyntranslation json file was not created!");
                 } else {
                     try (FileWriter writer = new FileWriter(defaultJson)) {
                         writer.append(DEFAULT_CONTENT);
@@ -250,7 +250,7 @@ public enum TranslationManager {
 
             final String sm = languageManager.getTranslation("chat.dyntranslation.load.successful");
             final String fm = languageManager.getTranslation("chat.dyntranslation.load.failed");
-            final String m = languageManager.getTranslation("chat.dyntranslation.rule.number");
+            final String nm = languageManager.getTranslation("chat.dyntranslation.rule.number");
             private int errorCount = 0;
 
             @Override
@@ -330,9 +330,9 @@ public enum TranslationManager {
                     }
 
                     if (errorCount == 0)
-                        TranslationManager.this.notify(sm + size + m);
+                        TranslationManager.this.notify(sm + size + nm);
                     else
-                        TranslationManager.this.notify(fm + size + m);
+                        TranslationManager.this.notify(fm + size + nm);
 
                 }
             }
@@ -350,7 +350,7 @@ public enum TranslationManager {
                         expandFormatMap(json);
                 } catch (Exception e) {
                     errorCount++;
-                    e.addSuppressed(new Exception("translation config can't be read successful!"));
+                    e.addSuppressed(new Exception("translation config can't be read!"));
                     e.printStackTrace();
                 }
 
@@ -358,7 +358,6 @@ public enum TranslationManager {
             }
         });
     }
-
 
     public void saveConfig() {
         IOExecutor.execute(Config::save);
@@ -588,8 +587,8 @@ public enum TranslationManager {
         return new TranslationRes(controlChars, trans);
     }
 
-    public String getNetworkTranslate(String unFormattedText) {
-        return getNetworkCache().get(unFormattedText);
+    public String getNetworkTranslate(String unformattedText) {
+        return getNetworkCache().get(unformattedText);
     }
 
     public Optional<String> translateChatText(String text) {
@@ -656,7 +655,6 @@ public enum TranslationManager {
         }
         return trans;
     }
-
 
     public boolean containsAtPreciseSet(String word) {
         return preciseMatchSet.contains(word);

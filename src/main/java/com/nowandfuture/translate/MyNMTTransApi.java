@@ -81,23 +81,5 @@ public class MyNMTTransApi implements ITranslateApi<MyNMTTransApi.MyNMTTransRes>
             return TranslateResult.createFailedResult();
     }
 
-    public static void main(String[] args) {
-        String query = "hi, world";
-        NetworkTranslateHelper.initNMTApi();
-        ITranslateApi.TranslateResult<MyNMTTransRes> res;
-        try {
-            res = NetworkTranslateHelper.translateByNMT(query, "en", "zh");
-            if(res != null && res.getState().equals(STATE.SUCCESS)) {
-                if(res.getState().equals(STATE.SUCCESS)) {
-                    String string = HttpGet.unicode2String(res.getResult());
-                    MyNMTTransRes nmtTransRes = new GsonBuilder().create().fromJson(string, MyNMTTransRes.class);
-                    System.out.println(nmtTransRes);
-                }else{
-                    System.out.println(res.getResult());
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+
 }

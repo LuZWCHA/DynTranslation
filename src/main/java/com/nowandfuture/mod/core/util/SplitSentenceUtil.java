@@ -114,13 +114,6 @@ public class SplitSentenceUtil {
         return 2;
     }
 
-    public static void main(String[] args) {
-        String text = "aaaa ... bbbb 82jbd";
-        LinkedList<SentencePart> s = spiltByDigit(text);
-        for (SentencePart p:
-             s) {
-            System.out.println(p.getString(text));
-        }
-    }
+
 
 }

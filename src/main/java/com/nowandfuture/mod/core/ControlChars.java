@@ -42,6 +42,32 @@ public class ControlChars {
         this.autoScale = autoScale;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ControlChars that = (ControlChars) o;
+
+        if (offsetX != that.offsetX) return false;
+        if (offsetY != that.offsetY) return false;
+        if (Float.compare(that.scale, scale) != 0) return false;
+        if (autoOffsetX != that.autoOffsetX) return false;
+        if (autoOffsetY != that.autoOffsetY) return false;
+        return autoScale == that.autoScale;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = offsetX;
+        result = 31 * result + offsetY;
+        result = 31 * result + (scale != +0.0f ? Float.floatToIntBits(scale) : 0);
+        result = 31 * result + (autoOffsetX ? 1 : 0);
+        result = 31 * result + (autoOffsetY ? 1 : 0);
+        result = 31 * result + (autoScale ? 1 : 0);
+        return result;
+    }
+
     public ControlChars(int offsetX, int offsetY, float scale) {
         this(offsetX,offsetY,scale,false,false,false);
     }
