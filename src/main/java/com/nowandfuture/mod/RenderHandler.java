@@ -56,13 +56,17 @@ public class RenderHandler {
             if (manager.isEnable()) {
                 if (!text.isEmpty()) {
 
+                    // the first line (always) as the item names, and make sure the translation key is holding.
                     if(KeyBindHandler.isTranslateKeyDown() && i == 0){
                         if(manager.isWaitingRes(text)){
+                            //display the waiting string...
                             lines.add(++i, ITextComponent.func_244388_a(" ..."));
                         }else {
-                            String res = manager.getNMTTranslation(text);
-                            if (!res.equals(text)) {
-                                lines.add(++i, ITextComponent.func_244388_a(res));
+                            //display the result.
+                            Optional<String> res = manager.getNMTTranslation(text);
+                            // TODO: 2022/1/16 map the optional ...
+                            if (res.isPresent() && !res.get().equals(text)) {
+                                lines.add(++i, ITextComponent.func_244388_a(res.get()));
                             }
                         }
 
@@ -84,9 +88,9 @@ public class RenderHandler {
                                 if(manager.isWaitingRes(localTranslate)){
                                     lines.add(++i, ITextComponent.func_244388_a(" ..."));
                                 }else {
-                                    String res = manager.getNMTTranslation(localTranslate);
-                                    if (!res.equals(localTranslate)) {
-                                        lines.add(++i, ITextComponent.func_244388_a(res));
+                                    Optional<String> res = manager.getNMTTranslation(localTranslate);
+                                    if (res.isPresent() && !res.get().equals(localTranslate)) {
+                                        lines.add(++i, ITextComponent.func_244388_a(res.get()));
                                     }
                                 }
 
@@ -113,9 +117,9 @@ public class RenderHandler {
                                         if(manager.isWaitingRes(localTranslate)){
                                             lines.add(++i, ITextComponent.func_244388_a(" ..."));
                                         }else {
-                                            String res = manager.getNMTTranslation(localTranslate);
-                                            if (!res.equals(localTranslate)) {
-                                                IFormattableTextComponent textComponent = new StringTextComponent(res);
+                                            Optional<String> res = manager.getNMTTranslation(localTranslate);
+                                            if (res.isPresent() && !res.get().equals(localTranslate)) {
+                                                IFormattableTextComponent textComponent = new StringTextComponent(res.get());
                                                 textComponent.func_230530_a_(trTc.getStyle());
                                                 lines.add(++j, textComponent);
                                             }

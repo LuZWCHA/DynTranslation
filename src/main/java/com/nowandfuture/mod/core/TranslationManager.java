@@ -18,6 +18,7 @@ import com.nowandfuture.mod.core.forgeimpl.ForgeInterfaces;
 import com.nowandfuture.mod.core.mcapi.IMinecraftInterfaces;
 import com.nowandfuture.mod.core.util.*;
 import com.nowandfuture.translate.MyNMTTransApi;
+import com.optimaize.langdetect.DetectedLanguage;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
 import com.optimaize.langdetect.i18n.LdLocale;
@@ -39,6 +40,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.nowandfuture.mod.core.forgeimpl.MinecraftUtil.*;
 
@@ -145,6 +148,7 @@ public enum TranslationManager {
     }
 
     private final ThreadPoolExecutor IOExecutor;
+
     private final static double MIN_CONFIDENCE = .666f;
 
     TranslationManager() {
@@ -1019,43 +1023,53 @@ public enum TranslationManager {
         return submitTasks.contains(text);
     }
 
-    public String getNMTTranslation(String text){
-        String trans = nmtCache.get(text);
-        if(trans != null){
-            return trans;
-        }
+    public Optional<String> getNMTTranslation(String text){
 
-        boolean requestNotTooFrequency = requestWait.tryAccept();
+        final String clearText = EnCnCharList.extraIdeographicChars(text);
 
-        if(!requestNotTooFrequency){
-            long left = requestWait.leftWaitTime();
-            return languageManager.getTranslation("string.dyntranslation.nextrequest.wait", left);
-        }
+        Optional<LdLocale> result = languageDetector.detect(clearText).toJavaUtil();
 
-        if(!submitTasks.contains(text)) {
-            submitTasks.add(text);
-            game.runAtBackground(() -> {
-                try {
-                    ITranslateApi.TranslateResult<MyNMTTransApi.MyNMTTransRes> result = NetworkTranslateHelper.translateByNMT(text, "en", "zh");
-                    MyNMTTransApi.MyNMTTransRes res = new GsonBuilder().create().fromJson(result.getResult(), MyNMTTransApi.MyNMTTransRes.class);
-                    if (res != null) {
-                        finishTask(text, res.getTranslation().getTo());
-                    }else{
-                        finishTask(text, null);
-                    }
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }finally {
+        return result.filter(
+                //English only
+                ldLocale -> ldLocale.getLanguage().startsWith("en")
+        ).map(ldLocale -> {
+            String trans = nmtCache.get(text);
+            if(trans != null){
+                return trans;
+            }
+
+            boolean requestNotTooFrequency = requestWait.tryAccept();
+
+            if(!requestNotTooFrequency){
+                long left = requestWait.leftWaitTime();
+                return languageManager.getTranslation("string.dyntranslation.nextrequest.wait", left);
+            }
+
+            if(!submitTasks.contains(text)) {
+                submitTasks.add(text);
+                game.runAtBackground(() -> {
                     try {
-                        finishTask(text, null);
-                    } catch (InterruptedException ignored) {
+                        ITranslateApi.TranslateResult<MyNMTTransApi.MyNMTTransRes> result1 = NetworkTranslateHelper.translateByNMT(text, "en", "zh");
+                        MyNMTTransApi.MyNMTTransRes res = new GsonBuilder().create().fromJson(result1.getResult(), MyNMTTransApi.MyNMTTransRes.class);
+                        if (res != null) {
+                            finishTask(text, res.getTranslation().getTo());
+                        }else{
+                            finishTask(text, null);
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
+                    }finally {
+                        try {
+                            finishTask(text, null);
+                        } catch (InterruptedException ignored) {
 
+                        }
                     }
-                }
-            });
-        }
+                });
+            }
 
-        return text;
+            return text;
+        });
     }
 
 }
