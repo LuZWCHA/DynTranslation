@@ -1,6 +1,5 @@
 package com.nowandfuture.mod.core.api;
 
-import com.google.gson.Gson;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.UnsupportedEncodingException;
@@ -42,6 +41,10 @@ public interface ITranslateApi<RESULT> {
 
         public static <RESULT>TranslateResult<RESULT> createFailedResult(){
             return new <RESULT>TranslateResult<RESULT>("null", STATE.FAILED);
+        }
+
+        public static <RESULT>TranslateResult<RESULT> createFailedResult(String failMessage){
+            return new <RESULT>TranslateResult<RESULT>(failMessage, STATE.FAILED);
         }
 
         public static <RESULT>TranslateResult<RESULT> createResult(String result, Map<String, String> others){

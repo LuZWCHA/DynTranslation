@@ -25,6 +25,8 @@ public class Config {
     private boolean SpiltWords;
     @SerializedName("RetainOrg")
     private boolean RetainOrg;
+    @SerializedName("DisplayNumber")
+    private int DisplayNumber;
     @SerializedName("TranslateApis")
     private List<TranslateApisEntity> TranslateApis;
 
@@ -33,6 +35,7 @@ public class Config {
         Enable = true;
         SpiltWords = true;
         RetainOrg = false;
+        DisplayNumber = 3;
         TranslateApis = new ArrayList<>();
     }
 
@@ -74,6 +77,14 @@ public class Config {
 
     public List<TranslateApisEntity> getTranslateApis() {
         return TranslateApis;
+    }
+
+    public int getDisplayNumber() {
+        return DisplayNumber;
+    }
+
+    public void setDisplayNumber(int displayNumber) {
+        DisplayNumber = displayNumber;
     }
 
     public class TranslateApisEntity {

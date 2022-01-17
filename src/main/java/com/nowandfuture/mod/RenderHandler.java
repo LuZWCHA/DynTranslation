@@ -54,7 +54,7 @@ public class RenderHandler {
             ITextComponent component = lines.get(i);
             String text = component.getUnformattedComponentText();
             if (manager.isEnable()) {
-                if (!text.isEmpty()) {
+                if (text != null && !text.isEmpty()) {
 
                     // the first line (always) as the item names, and make sure the translation key is holding.
                     if(KeyBindHandler.isTranslateKeyDown() && i == 0){
@@ -63,10 +63,15 @@ public class RenderHandler {
                             lines.add(++i, ITextComponent.func_244388_a(" ..."));
                         }else {
                             //display the result.
-                            Optional<String> res = manager.getNMTTranslation(text);
+                            Optional<List<String>> res = manager.getNMTTranslation(text, manager.getDisplayNumber());
                             // TODO: 2022/1/16 map the optional ...
-                            if (res.isPresent() && !res.get().equals(text)) {
-                                lines.add(++i, ITextComponent.func_244388_a(res.get()));
+
+                            if (res.isPresent()) {
+                                for (String trans :
+                                        res.get()) {
+                                    lines.add(++i, ITextComponent.func_244388_a(trans));
+                                }
+
                             }
                         }
 
@@ -88,9 +93,12 @@ public class RenderHandler {
                                 if(manager.isWaitingRes(localTranslate)){
                                     lines.add(++i, ITextComponent.func_244388_a(" ..."));
                                 }else {
-                                    Optional<String> res = manager.getNMTTranslation(localTranslate);
-                                    if (res.isPresent() && !res.get().equals(localTranslate)) {
-                                        lines.add(++i, ITextComponent.func_244388_a(res.get()));
+                                    Optional<List<String>> res = manager.getNMTTranslation(localTranslate, manager.getDisplayNumber());
+                                    if (res.isPresent()) {
+                                        for (String trans :
+                                                res.get()) {
+                                            lines.add(++i, ITextComponent.func_244388_a(trans));
+                                        }
                                     }
                                 }
 
@@ -109,19 +117,25 @@ public class RenderHandler {
                             ITextComponent trTc = siblings.get(j);
                             //This is only for test, if users can translate the .lang, they not need to use this mod to translate
                             if (trTc instanceof TranslationTextComponent) {
-                                String key = ((TranslationTextComponent) trTc).getKey();
+                                TranslationTextComponent translationTextComponent = ((TranslationTextComponent) trTc);
+                                String key = translationTextComponent.getKey();
+                                Object[] formatArgs = translationTextComponent.getFormatArgs();
+
                                 if (I18n.hasKey(key)) {
-                                    String localTranslate = I18n.format(key);
+                                    String localTranslate = translationTextComponent.func_230532_e_().getString();
                                     boolean keyDown = KeyBindHandler.isTranslateKeyDown();
                                     if(keyDown && i + j == 0){
                                         if(manager.isWaitingRes(localTranslate)){
                                             lines.add(++i, ITextComponent.func_244388_a(" ..."));
                                         }else {
-                                            Optional<String> res = manager.getNMTTranslation(localTranslate);
-                                            if (res.isPresent() && !res.get().equals(localTranslate)) {
-                                                IFormattableTextComponent textComponent = new StringTextComponent(res.get());
-                                                textComponent.func_230530_a_(trTc.getStyle());
-                                                lines.add(++j, textComponent);
+                                            Optional<List<String>> res = manager.getNMTTranslation(localTranslate, manager.getDisplayNumber());
+                                            if (res.isPresent()) {
+                                                for (String trans :
+                                                        res.get()) {
+                                                    IFormattableTextComponent textComponent = new StringTextComponent(trans);
+                                                    textComponent.func_230530_a_(trTc.getStyle());
+                                                    lines.add(++j, textComponent);
+                                                }
                                             }
                                         }
 

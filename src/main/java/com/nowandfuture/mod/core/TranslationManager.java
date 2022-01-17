@@ -99,6 +99,7 @@ public enum TranslationManager {
     private boolean enable = false;
     private boolean printFormatChars = true;
     private boolean enableSpiltWords = true;
+    private int displayNumber;
 
     private boolean enableChatTranslate = false;
     private boolean retainOrg = false;
@@ -193,6 +194,7 @@ public enum TranslationManager {
         this.retainOrg = config.isRetainOrg();
         this.enableChatTranslate = config.isChatTranslate();
         this.enableSpiltWords = config.isSpiltWords();
+        this.displayNumber = config.getDisplayNumber();
         loadTranslationApiBy(config);
     }
 
@@ -559,7 +561,7 @@ public enum TranslationManager {
             //step one, a simple split by "1234567890." for any language, O((k+d)n) time complexity, 2 >= k >= 1, the d value may reach n/2 when nearly every world has to be replace, the worst case may be O(n^2)
             //However, at normal case the replace time will very small, always 1 or 2, and the n dose this too.
             TranslationRes res = getSimpleSpiltTranslation(containerName, text);
-            if(res.text != null){
+            if (res.text != null) {
                 return resObj.set(res);
             }
             //step two, a slow way to spilt all worlds and search the result, for English it's fast, but for Jap or Chn it will be very slow.
@@ -577,14 +579,14 @@ public enum TranslationManager {
         String reformatString = SplitSentenceUtil.getSearchString(sentenceParts, text, digitList);
         String trans = searchLocalTranslation(containerName, reformatString, false);
         ControlChars controlChars = ControlChars.EMPTY;
-        if(trans != null){
+        if (trans != null) {
             controlChars = ControlCharsUtil.getControlChars(trans);
 
             if (!controlChars.isEmpty())
                 trans = ControlCharsUtil.removeControlChars(trans);
 
             for (int i = 0; i < digitList.size(); i++) {
-                trans = trans.replace("{"+ i + "}", digitList.get(i));
+                trans = trans.replace("{" + i + "}", digitList.get(i));
             }
         }
 
@@ -833,6 +835,10 @@ public enum TranslationManager {
         return toastClazz;
     }
 
+    public int getDisplayNumber() {
+        return displayNumber;
+    }
+
     public interface IVisitor {
         void onVisit(String name, String orgText, String translation);
     }
@@ -998,7 +1004,7 @@ public enum TranslationManager {
 
     //TODO remove the relationship with minecraft server_executor thread pool.
     private final ReentrantLock lock = new ReentrantLock();
-    private final FIFOCache<String, String> nmtCache = new FIFOCache<>(MAX_CACHE_SIZE);
+    private final FIFOCache<String, List<String>> nmtCache = new FIFOCache<>(MAX_CACHE_SIZE);
     private final Set<String> submitTasks = new HashSet<>();
     //limit the request frequency
     //failed request will increase the next one to be sent
@@ -1007,69 +1013,91 @@ public enum TranslationManager {
     // and the max wait time is 32 * 250 + 500 = 8.5 seconds
     private final RequestWait requestWait = RequestWait.DEFAULT();
 
-    public void finishTask(String text, String res) throws InterruptedException {
+    /**
+     * @param text the original text to be translated.
+     * @param res the translate result of the text
+     * @param noTranslate if the original text is the target language, we do not translate it.
+     * @throws InterruptedException the cache is thread save for putting and taking. If the thread has been interrupted,
+     * the result will be discard.
+     */
+    public void finishTask(String text, List<String> res, boolean noTranslate) throws InterruptedException {
         lock.lockInterruptibly();
-        if(res != null) {
-            nmtCache.put(text, res);
+        if(noTranslate){
+            nmtCache.put(text, Lists.newArrayList(text));
             requestWait.request(true);
-        }else{
-            requestWait.request(false);
+        }else {
+
+            if (res != null) {
+                nmtCache.put(text, res);
+                requestWait.request(true);
+            } else {
+                requestWait.request(false);
+            }
         }
         submitTasks.remove(text);
         lock.unlock();
     }
 
-    public boolean isWaitingRes(String text){
+    public boolean isWaitingRes(String text) {
         return submitTasks.contains(text);
     }
 
-    public Optional<String> getNMTTranslation(String text){
+    public Optional<List<String>> getNMTTranslation(String text, int number) {
 
         final String clearText = EnCnCharList.extraIdeographicChars(text);
 
-        Optional<LdLocale> result = languageDetector.detect(clearText).toJavaUtil();
+        List<String> trans = nmtCache.get(text);
+        if (trans != null) {
+            return Optional.of(trans);
+        }
 
-        return result.filter(
-                //English only
-                ldLocale -> ldLocale.getLanguage().startsWith("en")
-        ).map(ldLocale -> {
-            String trans = nmtCache.get(text);
-            if(trans != null){
-                return trans;
-            }
+        boolean requestNotTooFrequency = requestWait.tryAccept();
 
-            boolean requestNotTooFrequency = requestWait.tryAccept();
+        if (!requestNotTooFrequency) {
+            long left = requestWait.leftWaitTime();
+            return Optional.of(Lists.newArrayList(languageManager.getTranslation("string.dyntranslation.nextrequest.wait", left)));
+        }
 
-            if(!requestNotTooFrequency){
-                long left = requestWait.leftWaitTime();
-                return languageManager.getTranslation("string.dyntranslation.nextrequest.wait", left);
-            }
+        if (!submitTasks.contains(text)) {
+            submitTasks.add(text);
+            game.runAtBackground(() -> {
+                Optional<LdLocale> result = languageDetector.detect(clearText).toJavaUtil();
+                result.ifPresent(
+                        ldLocale -> {
+                            //translate English only.
+                            if(ldLocale.getLanguage().startsWith("en")){
+                                try {
+                                    ITranslateApi.TranslateResult<MyNMTTransApi.MyNMTTransRes> result1 = NetworkTranslateHelper.translateByNMT(text, "en", "zh");
+                                    MyNMTTransApi.MyNMTTransRes res = new GsonBuilder().create().fromJson(result1.getResult(), MyNMTTransApi.MyNMTTransRes.class);
+                                    if (res != null) { finishTask(text, res.getTranslation().getTo().subList(0, number), false);
+                                    } else {
+                                        finishTask(text, null, false);
+                                    }
+                                } catch (IOException | InterruptedException e) {
+                                    e.printStackTrace();
+                                } finally {
+                                    try {
+                                        finishTask(text, null, false);
+                                    } catch (InterruptedException ignored) {
 
-            if(!submitTasks.contains(text)) {
-                submitTasks.add(text);
-                game.runAtBackground(() -> {
-                    try {
-                        ITranslateApi.TranslateResult<MyNMTTransApi.MyNMTTransRes> result1 = NetworkTranslateHelper.translateByNMT(text, "en", "zh");
-                        MyNMTTransApi.MyNMTTransRes res = new GsonBuilder().create().fromJson(result1.getResult(), MyNMTTransApi.MyNMTTransRes.class);
-                        if (res != null) {
-                            finishTask(text, res.getTranslation().getTo());
-                        }else{
-                            finishTask(text, null);
+                                    }
+                                }
+                            }else {
+                                try {
+                                    //put the origin text as translation.
+                                    finishTask(text, null, true);
+                                } catch (InterruptedException ignored) {
+
+                                }
+                            }
                         }
-                    } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
-                    }finally {
-                        try {
-                            finishTask(text, null);
-                        } catch (InterruptedException ignored) {
+                );
 
-                        }
-                    }
-                });
-            }
+            });
+        }
 
-            return text;
-        });
+        return Optional.of(Lists.newArrayList(text));
+
     }
 
 }
