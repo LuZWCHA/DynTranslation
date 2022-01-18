@@ -56,11 +56,11 @@ public class RenderHandler {
             if (manager.isEnable()) {
                 if (text != null && !text.isEmpty()) {
 
-                    // the first line (always) as the item names, and make sure the translation key is holding.
+                    // the first line (always) is the item names, and make sure the translation key is holding.
                     if(KeyBindHandler.isTranslateKeyDown() && i == 0){
                         if(manager.isWaitingRes(text)){
                             //display the waiting string...
-                            lines.add(++i, ITextComponent.func_244388_a(" ..."));
+                            lines.add(++i, ITextComponent.func_244388_a("..."));
                         }else {
                             //display the result.
                             Optional<List<String>> res = manager.getNMTTranslation(text, manager.getDisplayNumber());
@@ -91,7 +91,7 @@ public class RenderHandler {
                             String localTranslate = I18n.format(key);
                             if(KeyBindHandler.isTranslateKeyDown() && i == 0){
                                 if(manager.isWaitingRes(localTranslate)){
-                                    lines.add(++i, ITextComponent.func_244388_a(" ..."));
+                                    lines.add(++i, ITextComponent.func_244388_a("..."));
                                 }else {
                                     Optional<List<String>> res = manager.getNMTTranslation(localTranslate, manager.getDisplayNumber());
                                     if (res.isPresent()) {
@@ -126,7 +126,7 @@ public class RenderHandler {
                                     boolean keyDown = KeyBindHandler.isTranslateKeyDown();
                                     if(keyDown && i + j == 0){
                                         if(manager.isWaitingRes(localTranslate)){
-                                            lines.add(++i, ITextComponent.func_244388_a(" ..."));
+                                            lines.add(++i, ITextComponent.func_244388_a("..."));
                                         }else {
                                             Optional<List<String>> res = manager.getNMTTranslation(localTranslate, manager.getDisplayNumber());
                                             if (res.isPresent()) {

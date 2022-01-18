@@ -21,6 +21,8 @@ import net.minecraft.util.text.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.client.gui.widget.ExtendedButton;
+import net.minecraftforge.fml.client.gui.widget.Slider;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -30,6 +32,7 @@ public class CommandGui extends Screen {
 //    private AbstractList<FileEntry> listGui;
     private ExtendedButton loadMapBtn, loadConfigBtn;
     private ExtendedCheckButton enableBtn, spiltBtn, retainOrgBtn;
+    private Slider transNumDipSlider;
 
     public CommandGui(ITextComponent titleIn) {
         super(titleIn);
@@ -38,38 +41,36 @@ public class CommandGui extends Screen {
     //init()
     @Override
     protected void func_231160_c_() {
-//        listGui = new LoadedMapList(minecraft,this.width / 2 - 100, this.height / 4,200,0,16);
-//        listGui.children().clear();
+
+        int w = this.field_230708_k_;
+        int h = this.field_230709_l_;
+        final TranslationManager manager = TranslationManager.INSTANCE;
+        int vNumWidget = 5;
+
+//        listGui = new LoadedMapList(this.getMinecraft(),w / 2 - 100, h / vNumWidget,200,120,16);
+//        listGui.func_231039_at__().clear();
 //        TranslationManager.INSTANCE.getFileList()
 //                .stream().map(file -> {
 //            FileEntry entry = new FileEntry();
 //            entry.setLoadedFileName(file.getName());
 //            return entry;
 //        }).forEach(fileEntry -> {
-//            listGui.children().add(fileEntry);
+//            listGui.func_231039_at__().add(fileEntry);
 //        });
 
-        loadConfigBtn = new ExtendedButton(this.field_230708_k_ / 2 - 100, this.field_230709_l_ / 4 + 24, 200, 20, new StringTextComponent(I18n.format("gui.dyntranslation.config.load")), new Button.IPressable() {
-            @Override
-            public void onPress(Button p_onPress_1_) {
-                TranslationManager.INSTANCE.loadConfig();
-            }
-        });
+        loadConfigBtn = new ExtendedButton(w / 2 - 100, h / vNumWidget + 24, 200, 20, new StringTextComponent(I18n.format("gui.dyntranslation.config.load")), btn -> manager.loadConfig());
+        loadMapBtn = new ExtendedButton(w / 2 - 100, h / vNumWidget + 24 * 2, 200, 20, new StringTextComponent(I18n.format("gui.dyntranslation.map.load")), btn -> manager.loadFromJsonMaps());
 
-        loadMapBtn = new ExtendedButton(this.field_230708_k_ / 2 - 100, this.field_230709_l_ / 4 + 48, 200, 20, new StringTextComponent(I18n.format("gui.dyntranslation.map.load")), new Button.IPressable() {
-            @Override
-            public void onPress(Button p_onPress_1_) {
-                TranslationManager.INSTANCE.loadFromJsonMaps();
-            }
-        });
+        enableBtn = new ExtendedCheckButton(w / 2 - 100, h / vNumWidget + 24 * 3, 200, 20, ITextComponent.func_244388_a(I18n.format("gui.dyntranslation.enable")), manager.isEnable());
+        spiltBtn = new ExtendedCheckButton(w / 2 - 100, h / vNumWidget + 24 * 4, 200, 20, ITextComponent.func_244388_a(I18n.format("gui.dyntranslation.word.spilt")), manager.isEnableSpiltWords());
+        retainOrgBtn = new ExtendedCheckButton(w / 2 - 100, h / vNumWidget + 24 * 5, 200, 20, ITextComponent.func_244388_a(I18n.format("gui.dyntranslation.org.retain")), manager.isRetainOrg());
+        transNumDipSlider = new Slider(w / 2 - 100, h / vNumWidget + 24 * 6, 200, 20, ITextComponent.func_244388_a(I18n.format("gui.dyntranslation.translation.candidate")), ITextComponent.func_244388_a(""), 1, 3, manager.getDisplayNumber(), false, true,
+                btn->{}, slider -> manager.setDisplayNumber(slider.getValueInt()));
 
-        enableBtn = new ExtendedCheckButton(this.field_230708_k_ / 2 - 100, this.field_230709_l_ / 4 + 72, 200, 20, ITextComponent.func_244388_a(I18n.format("gui.dyntranslation.enable")), TranslationManager.INSTANCE.isEnable());
-        spiltBtn = new ExtendedCheckButton(this.field_230708_k_ / 2 - 100, this.field_230709_l_ / 4 + 96, 200, 20, ITextComponent.func_244388_a(I18n.format("gui.dyntranslation.word.spilt")), TranslationManager.INSTANCE.isEnableSpiltWords());
-        retainOrgBtn = new ExtendedCheckButton(this.field_230708_k_ / 2 - 100, this.field_230709_l_ / 4 + 120, 200, 20, ITextComponent.func_244388_a(I18n.format("gui.dyntranslation.org.retain")), TranslationManager.INSTANCE.isRetainOrg());
+        enableBtn.addListener(manager::setEnable);
+        spiltBtn.addListener(manager::setEnableSpiltWords);
+        retainOrgBtn.addListener(manager::setRetainOrg);
 
-        enableBtn.addListener(TranslationManager.INSTANCE::setEnable);
-        spiltBtn.addListener(TranslationManager.INSTANCE::setEnableSpiltWords);
-        retainOrgBtn.addListener(TranslationManager.INSTANCE::setRetainOrg);
 
         //addButton
         this.func_230480_a_(loadConfigBtn);
@@ -77,7 +78,7 @@ public class CommandGui extends Screen {
         this.func_230480_a_(enableBtn);
         this.func_230480_a_(spiltBtn);
         this.func_230480_a_(retainOrgBtn);
-//        this.children.add(listGui);
+        this.func_230480_a_(transNumDipSlider);
     }
 
 
@@ -86,9 +87,10 @@ public class CommandGui extends Screen {
     public void func_230430_a_(MatrixStack matrixStack, int p_render_1_, int p_render_2_, float p_render_3_) {
         this.func_238651_a_(matrixStack, -1);//renderBackground()
         //drawCenteredString,frontRender,width
+//        this.listGui.func_230430_a_(matrixStack, p_render_1_, p_render_2_, p_render_3_);
+
         func_238471_a_(matrixStack,field_230712_o_, I18n.format("gui.dyntranslation.setting.title"), field_230708_k_/2,20,16777215);
         super.func_230430_a_(matrixStack,p_render_1_, p_render_2_, p_render_3_);
-//        this.listGui.render(p_render_1_, p_render_2_, p_render_3_);
     }
 
     public static class LoadedMapList extends AbstractList<FileEntry>{
@@ -99,7 +101,6 @@ public class CommandGui extends Screen {
             this.field_230674_k_ = x + w;
         }
 
-//        getRowWidth
         @Override
         public int func_230949_c_() {
             return 200;
@@ -107,7 +108,7 @@ public class CommandGui extends Screen {
     }
 
 
-    public static class FileEntry extends AbstractList.AbstractListEntry<FileEntry>{
+    public class FileEntry extends AbstractList.AbstractListEntry<FileEntry>{
 
         private String loadedFileName;
 
@@ -115,16 +116,9 @@ public class CommandGui extends Screen {
             return loadedFileName;
         }
 
-
-//        @Override
-//        public void render(int entryIdx, int top, int left, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean p_194999_5_, float partialTicks) {
-//            Minecraft.getInstance().fontRenderer.drawString(loadedFileName, left, top, 0xCCCCCC);
-//        }
-
-
         @Override
         public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-            return false;
+            return super.keyReleased(keyCode, scanCode, modifiers);
         }
 
 
@@ -132,9 +126,10 @@ public class CommandGui extends Screen {
             this.loadedFileName = loadedFileName;
         }
 
+        //render
         @Override
         public void func_230432_a_(MatrixStack matrixStack, int left, int top, int p_230432_4_, int p_230432_5_, int p_230432_6_, int p_230432_7_, int p_230432_8_, boolean p_230432_9_, float p_230432_10_) {
-            Minecraft.getInstance().fontRenderer.func_243248_b(matrixStack, ITextComponent.func_244388_a(loadedFileName), left, top, 0xCCCCCC);
+            CommandGui.this.field_230712_o_.func_243248_b(matrixStack, ITextComponent.func_244388_a(loadedFileName), left, top, 0xCCCCCC);
         }
     }
 
@@ -152,7 +147,6 @@ public class CommandGui extends Screen {
         public Visibility func_230444_a_(MatrixStack matrixStack, ToastGui toastGui, long delta) {
             toastGui.getMinecraft().getTextureManager().bindTexture(TEXTURE_TOASTS);
             RenderSystem.color3f(1.0F, 1.0F, 1.0F);
-            IRenderTypeBuffer.Impl irendertypebuffer$impl = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
 
             toastGui.func_238474_b_(matrixStack,0, 0, 0, 0, 160, 32);
             if (subTitle != null) {

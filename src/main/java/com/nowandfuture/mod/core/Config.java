@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,79 +16,80 @@ public class Config {
      * Enable : true
      * SpiltWords : true
      * RetainOrg : false
+     * DisplayNumber: 3
      * TranslateApis : [{"name":"baidu","secret":"dadasdasdsa","key":"13123123131"},{"name":"youdao","secret":"dadasdasdsa","key":"13123123131"}]
      */
     @SerializedName("ChatTranslate")
-    private boolean ChatTranslate;
+    private boolean chatTranslate;
     @SerializedName("Enable")
-    private boolean Enable;
+    private boolean enable;
     @SerializedName("SpiltWords")
-    private boolean SpiltWords;
+    private boolean spiltWords;
     @SerializedName("RetainOrg")
-    private boolean RetainOrg;
+    private boolean retainOrg;
     @SerializedName("DisplayNumber")
-    private int DisplayNumber;
+    private int displayNumber;
     @SerializedName("TranslateApis")
-    private List<TranslateApisEntity> TranslateApis;
+    private List<TranslateApisEntity> translateApisEntities;
 
     public Config(){
-        ChatTranslate = false;
-        Enable = true;
-        SpiltWords = true;
-        RetainOrg = false;
-        DisplayNumber = 3;
-        TranslateApis = new ArrayList<>();
+        chatTranslate = false;
+        enable = true;
+        spiltWords = true;
+        retainOrg = false;
+        displayNumber = 3;
+        translateApisEntities = new ArrayList<>();
     }
 
     public void setChatTranslate(boolean ChatTranslate) {
-        this.ChatTranslate = ChatTranslate;
+        this.chatTranslate = ChatTranslate;
     }
 
     public void setEnable(boolean Enable) {
-        this.Enable = Enable;
+        this.enable = Enable;
     }
 
     public void setSpiltWords(boolean SpiltWords) {
-        this.SpiltWords = SpiltWords;
+        this.spiltWords = SpiltWords;
     }
 
     public void setRetainOrg(boolean RetainOrg) {
-        this.RetainOrg = RetainOrg;
+        this.retainOrg = RetainOrg;
     }
 
     public void setTranslateApis(List<TranslateApisEntity> TranslateApis) {
-        this.TranslateApis = TranslateApis;
+        this.translateApisEntities = TranslateApis;
     }
 
     public boolean isChatTranslate() {
-        return ChatTranslate;
+        return chatTranslate;
     }
 
     public boolean isEnable() {
-        return Enable;
+        return enable;
     }
 
     public boolean isSpiltWords() {
-        return SpiltWords;
+        return spiltWords;
     }
 
     public boolean isRetainOrg() {
-        return RetainOrg;
+        return retainOrg;
     }
 
     public List<TranslateApisEntity> getTranslateApis() {
-        return TranslateApis;
+        return translateApisEntities;
     }
 
     public int getDisplayNumber() {
-        return DisplayNumber;
+        return displayNumber;
     }
 
     public void setDisplayNumber(int displayNumber) {
-        DisplayNumber = displayNumber;
+        this.displayNumber = displayNumber;
     }
 
-    public class TranslateApisEntity {
+    public static class TranslateApisEntity {
         /**
          * name : baidu
          * secret : dadasdasdsa
@@ -128,26 +130,16 @@ public class Config {
     private static final String FILE_NAME = "config.json";
 
 
-    //invoke after TranslationManager initMaps
+    //invoke after TranslationManager#initMaps
     public static void load(){
         if(TranslationManager.INSTANCE.getConfigDir().exists()){
-            File file = createConfigFile();
+            final File file = tryCreateConfigFile();
             Config config = null;
             if(file != null){
-                FileReader fileReader = null;
-                try {
-                    fileReader = new FileReader(file);
+                try (FileReader fileReader = new FileReader(file)){
                     config = new Gson().fromJson(fileReader,Config.class);
-                } catch (FileNotFoundException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
-                }finally {
-                    if(fileReader != null) {
-                        try {
-                            fileReader.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
                 }
 
                 boolean firstCreate = false;
@@ -158,7 +150,7 @@ public class Config {
                 }
 
                 TranslationManager.INSTANCE.setConfig(config);
-                TranslationManager.INSTANCE.initConfig();
+                TranslationManager.INSTANCE.loadFromConfig();
 
                 if(firstCreate){
                     save();
@@ -168,9 +160,9 @@ public class Config {
         }
     }
 
-    public static File createConfigFile(){
+    public static File tryCreateConfigFile(){
         boolean flag = true;
-        File file = new File(TranslationManager.INSTANCE.getConfigDir().getAbsolutePath() + "/" + FILE_NAME);
+        final File file = Paths.get(TranslationManager.INSTANCE.getConfigDir().getAbsolutePath(), FILE_NAME).toFile();
         if(!file.exists() || file.isDirectory()){
             try {
                 flag = file.createNewFile();
@@ -183,9 +175,8 @@ public class Config {
     }
 
     public static void save(){
-        Config config = TranslationManager.INSTANCE.setupConfig();
-
-        File file = createConfigFile();
+        final Config config = TranslationManager.INSTANCE.save2Config();
+        final File file = tryCreateConfigFile();
         if(file != null){
             try (FileWriter fileWriter = new FileWriter(file)){
 

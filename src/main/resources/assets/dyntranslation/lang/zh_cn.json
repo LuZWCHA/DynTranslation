@@ -6,6 +6,7 @@
     "gui.dyntranslation.word.spilt": "分词",
     "gui.dyntranslation.org.retain": "保留原文",
     "gui.dyntranslation.enable": "启用",
+    "gui.dyntranslation.translation.candidate": "候选翻译结果数：",
     "gui.dyntranslation.setting.title": "设置",
     "chat.dyntranslation.record.start": "开始记录字符",
     "chat.dyntranslation.record.saving": "停止记录，保存文件中...",

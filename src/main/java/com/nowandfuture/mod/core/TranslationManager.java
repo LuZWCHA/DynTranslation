@@ -18,7 +18,6 @@ import com.nowandfuture.mod.core.forgeimpl.ForgeInterfaces;
 import com.nowandfuture.mod.core.mcapi.IMinecraftInterfaces;
 import com.nowandfuture.mod.core.util.*;
 import com.nowandfuture.translate.MyNMTTransApi;
-import com.optimaize.langdetect.DetectedLanguage;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
 import com.optimaize.langdetect.i18n.LdLocale;
@@ -40,7 +39,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.nowandfuture.mod.core.forgeimpl.MinecraftUtil.*;
@@ -189,7 +187,7 @@ public enum TranslationManager {
         loadFromJsonMaps();
     }
 
-    public void initConfig() {
+    public void loadFromConfig() {
         this.enable = config.isEnable();
         this.retainOrg = config.isRetainOrg();
         this.enableChatTranslate = config.isChatTranslate();
@@ -815,7 +813,7 @@ public enum TranslationManager {
         saveConfig();
     }
 
-    public Config setupConfig() {
+    public Config save2Config() {
         config.setChatTranslate(enableChatTranslate);
         config.setEnable(enable);
         config.setRetainOrg(retainOrg);
@@ -837,6 +835,10 @@ public enum TranslationManager {
 
     public int getDisplayNumber() {
         return displayNumber;
+    }
+
+    public void setDisplayNumber(int displayNumber) {
+        this.displayNumber = displayNumber;
     }
 
     public interface IVisitor {
@@ -1014,28 +1016,39 @@ public enum TranslationManager {
     private final RequestWait requestWait = RequestWait.DEFAULT();
 
     /**
-     * @param text the original text to be translated.
-     * @param res the translate result of the text
+     * @param text        the original text to be translated.
+     * @param res         the translate result of the text
      * @param noTranslate if the original text is the target language, we do not translate it.
      * @throws InterruptedException the cache is thread save for putting and taking. If the thread has been interrupted,
-     * the result will be discard.
+     *                              the result will be discard.
      */
-    public void finishTask(String text, List<String> res, boolean noTranslate) throws InterruptedException {
-        lock.lockInterruptibly();
-        if(noTranslate){
-            nmtCache.put(text, Lists.newArrayList(text));
-            requestWait.request(true);
-        }else {
+    public void saveTaskRes(String text, List<String> res, boolean noTranslate) throws InterruptedException {
 
-            if (res != null) {
-                nmtCache.put(text, res);
+        try {
+            lock.lockInterruptibly();
+            if (noTranslate) {
+                nmtCache.put(text, Lists.newArrayList(text));
                 requestWait.request(true);
             } else {
-                requestWait.request(false);
+                if (res != null) {
+                    nmtCache.put(text, res);
+                    requestWait.request(true);
+                } else {
+                    requestWait.request(false);
+                }
             }
+        } finally {
+            lock.unlock();
         }
-        submitTasks.remove(text);
-        lock.unlock();
+    }
+
+    public void cancelTask(String text) throws InterruptedException {
+        try {
+            lock.lockInterruptibly();
+            submitTasks.remove(text);
+        } finally {
+            lock.unlock();
+        }
     }
 
     public boolean isWaitingRes(String text) {
@@ -1061,39 +1074,47 @@ public enum TranslationManager {
         if (!submitTasks.contains(text)) {
             submitTasks.add(text);
             game.runAtBackground(() -> {
-                Optional<LdLocale> result = languageDetector.detect(clearText).toJavaUtil();
-                result.ifPresent(
-                        ldLocale -> {
-                            //translate English only.
-                            if(ldLocale.getLanguage().startsWith("en")){
-                                try {
-                                    ITranslateApi.TranslateResult<MyNMTTransApi.MyNMTTransRes> result1 = NetworkTranslateHelper.translateByNMT(text, "en", "zh");
-                                    MyNMTTransApi.MyNMTTransRes res = new GsonBuilder().create().fromJson(result1.getResult(), MyNMTTransApi.MyNMTTransRes.class);
-                                    if (res != null) { finishTask(text, res.getTranslation().getTo().subList(0, number), false);
-                                    } else {
-                                        finishTask(text, null, false);
-                                    }
-                                } catch (IOException | InterruptedException e) {
-                                    e.printStackTrace();
-                                } finally {
-                                    try {
-                                        finishTask(text, null, false);
-                                    } catch (InterruptedException ignored) {
+                        Optional<LdLocale> result = languageDetector.detect(clearText).toJavaUtil();
+                        //if the detect language is unknown or the result is not confident enough,
+                        //just believe it is Chinese, so that the string would not be translated.
+                        LdLocale ldLocale = result.orElse(LdLocale.fromString("zh-CN"));
 
-                                    }
+                        //translate English only.
+                        if (ldLocale.getLanguage().startsWith("en")) {
+                            try {
+                                ITranslateApi.TranslateResult<MyNMTTransApi.MyNMTTransRes> result1 = NetworkTranslateHelper.translateByNMT(text, "en", "zh");
+                                MyNMTTransApi.MyNMTTransRes res = new GsonBuilder().create().fromJson(result1.getResult(), MyNMTTransApi.MyNMTTransRes.class);
+                                if (res != null) {
+                                    saveTaskRes(text, res.getTranslation().getTo().subList(0, number), false);
+                                } else {
+                                    saveTaskRes(text, null, false);
                                 }
-                            }else {
+                            } catch (IOException | InterruptedException e) {
+                                e.printStackTrace();
+                            } finally {
                                 try {
-                                    //put the origin text as translation.
-                                    finishTask(text, null, true);
+                                    saveTaskRes(text, null, false);
                                 } catch (InterruptedException ignored) {
 
                                 }
                             }
-                        }
-                );
+                        } else {
+                            try {
+                                //put the origin text as translation.
+                                saveTaskRes(text, null, true);
+                            } catch (InterruptedException ignored) {
 
-            });
+                            }
+                        }
+                    }
+            );
+
+            try {
+                cancelTask(text);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
         }
 
         return Optional.of(Lists.newArrayList(text));

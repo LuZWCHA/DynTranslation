@@ -6,6 +6,7 @@
     "gui.dyntranslation.word.spilt": "Words Spilt",
     "gui.dyntranslation.org.retain": "Retain Org",
     "gui.dyntranslation.enable": "Enable",
+    "gui.dyntranslation.translation.candidate": "Candidate Translation Number: ",
     "gui.dyntranslation.setting.title": "DynTranslation Setting",
     "chat.dyntranslation.record.start": "start record...",
     "chat.dyntranslation.record.saving": "end record, saving to file...",
