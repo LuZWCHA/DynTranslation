@@ -2,16 +2,16 @@
   "package": "com.nowandfuture.mod.mixins",
   "required": true,
   "mixins": [
-
   ],
   "client": [
     "IMixinGuiNewChat",
+    "MixinClientLanguageMap",
     "MixinEmptyProfiler",
     "MixinFontRenderer",
     "MixinGuiUtils",
+    "MixinNewChatGui",
     "MixinProfiler",
-    "MixinToastToastInstance",
-    "MixinNewChatGui"
+    "MixinToastToastInstance"
   ],
   "server": [],
   "compatibilityLevel": "JAVA_8",

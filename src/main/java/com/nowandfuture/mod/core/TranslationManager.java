@@ -39,11 +39,9 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 
 import static com.nowandfuture.mod.core.forgeimpl.MinecraftUtil.*;
 
-//import net.minecraft.client.Minecraft;
 
 public enum TranslationManager {
     INSTANCE;
@@ -467,6 +465,53 @@ public enum TranslationManager {
         getNetworkCache().clear();
     }
 
+//    Long2LongMap timeCostMap = new Long2LongOpenHashMap();
+//    Long2LongMap timeCostMap2 = new Long2LongOpenHashMap();
+//    private int statictis = 3600;
+//
+//    private void put2CostTimeMap(int fc, long time){
+//        if(timeCostMap.size() == statictis){
+//            File sf = new File("result.csv");
+//            if(!sf.exists()){
+//                try {
+//                    sf.createNewFile();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            try(BufferedWriter writer = new BufferedWriter(new FileWriter(sf, false))) {
+//                timeCostMap.forEach(new BiConsumer<Long, Long>() {
+//                    @Override
+//                    public void accept(Long aLong, Long aLong2) {
+//                        try {
+//                            writer.write(String.valueOf(aLong));
+//                            writer.write(',');
+//                            writer.write(String.valueOf(aLong2));
+//                            writer.write(',');
+//                            writer.write(String.valueOf(aLong2));
+//                            writer.write('\n');
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                });
+//
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//
+//        FrameTimer timer = Minecraft.getInstance().getFrameTimer();
+//
+//        if(timeCostMap.containsKey(fc)){
+//            timeCostMap.put(fc, timeCostMap.get(fc) + time);
+//        }else{
+//            timeCostMap.put(fc, time);
+//        }
+//
+//
+//    }
+
     public TranslationRes translate(String text) {
 
         String trans;
@@ -524,7 +569,6 @@ public enum TranslationManager {
                     trans = ControlCharsUtil.removeControlChars(trans);
 
                 trans = text.replace(strings, trans);
-
                 return resObj.set(controlChars, trans);
             }
 
@@ -565,7 +609,6 @@ public enum TranslationManager {
             //step two, a slow way to spilt all worlds and search the result, for English it's fast, but for Jap or Chn it will be very slow.
             searchTranslation(containerName, text);
         }
-
         return resObj.notTranslated();
     }
 

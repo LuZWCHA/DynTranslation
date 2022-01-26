@@ -5,11 +5,14 @@ import com.nowandfuture.mod.core.TranslationRes;
 import com.nowandfuture.mod.mixins.IMixinGuiNewChat;
 import com.nowandfuture.mod.core.forgeimpl.CharConsumer;
 import com.nowandfuture.mod.core.forgeimpl.MinecraftUtil;
+import com.nowandfuture.mod.vanillaopt.PacketCapture;
 import joptsimple.internal.Strings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ChatLine;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.IReorderingProcessor;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.util.text.*;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -48,7 +51,9 @@ public class RenderHandler {
 
     @SubscribeEvent
     public void handleItemTooltipEvent(ItemTooltipEvent tooltipEvent) {
+
         List<ITextComponent> lines = tooltipEvent.getToolTip();
+
         TranslationManager manager = TranslationManager.INSTANCE;
         for (int i = 0; i < lines.size(); i++) {
             ITextComponent component = lines.get(i);
@@ -168,9 +173,12 @@ public class RenderHandler {
         }
     }
 
+    public static long frameCount = 0;
     @SubscribeEvent
     public void handleRender(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
+            frameCount ++;
+
             List<ChatLine<IReorderingProcessor>> list =
                     ((IMixinGuiNewChat) (Minecraft.getInstance().ingameGUI.getChatGUI()))
                             .getDrawnChatLines();
