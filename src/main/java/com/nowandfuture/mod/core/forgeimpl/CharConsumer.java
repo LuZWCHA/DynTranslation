@@ -8,9 +8,9 @@ public class CharConsumer implements ICharacterConsumer {
     private Style style = Style.field_240709_b_;
 
     @Override
-    public boolean accept(int p_accept_1_, Style p_accept_2_, int p_accept_3_) {
+    public boolean accept(int code, Style style, int p_accept_3_) {
         builder.appendCodePoint(p_accept_3_);
-        style = p_accept_2_;
+        this.style = style;
         return true;
     }
 

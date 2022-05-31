@@ -3,6 +3,11 @@ package com.nowandfuture.mod.core.util;
 import com.nowandfuture.mod.core.ControlChars;
 
 public class ControlCharsUtil {
+    private final static String X_VALUE = "x";
+    private final static String Y_VALUE = "y";
+    private final static String SCALE_VALUE = "scale";
+
+    private final static String AUTO_STR = "auto";
 
     public static String removeControlChars(String text){
         if(text.startsWith("{")){
@@ -44,22 +49,22 @@ public class ControlCharsUtil {
 
                     try {
                         switch (left){
-                            case "x":
-                                if(right.equals("auto")){
+                            case X_VALUE:
+                                if(AUTO_STR.equals(right)){
                                     autoX = true;
                                 }else{
                                     x = Integer.parseInt(right);
                                 }
                                 break;
-                            case "y":
-                                if(right.equals("auto")){
+                            case Y_VALUE:
+                                if(AUTO_STR.equals(right)){
                                     autoY = true;
                                 }else{
                                     y = Integer.parseInt(right);
                                 }
                                 break;
-                            case "scale":
-                                if(right.equals("auto")){
+                            case SCALE_VALUE:
+                                if(AUTO_STR.equals(right)){
                                     autoS = true;
                                 }else{
                                     scale = Float.parseFloat(right);

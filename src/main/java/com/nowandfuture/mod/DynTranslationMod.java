@@ -1,7 +1,7 @@
 package com.nowandfuture.mod;
 
 import com.nowandfuture.mod.core.TranslationManager;
-import com.nowandfuture.mod.vanillaopt.ClazzOfModCache;
+import com.nowandfuture.mod.core.forgeimpl.vanillaopt.ClazzOfModCache;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.*;

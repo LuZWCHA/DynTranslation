@@ -1,4 +1,4 @@
-package com.nowandfuture.mod.vanillaopt;
+package com.nowandfuture.mod.core.forgeimpl.vanillaopt;
 
 import joptsimple.internal.Strings;
 import net.minecraftforge.fml.ModContainer;

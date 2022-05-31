@@ -1,9 +1,8 @@
 package com.nowandfuture.mod.mixins;
 
-import com.nowandfuture.mod.vanillaopt.ClazzOfModCache;
-import com.nowandfuture.mod.vanillaopt.ExtraLanguageMap;
-import com.nowandfuture.mod.vanillaopt.PacketCapture;
-import joptsimple.internal.Strings;
+import com.nowandfuture.mod.core.forgeimpl.vanillaopt.ClazzOfModCache;
+import com.nowandfuture.mod.core.forgeimpl.vanillaopt.ExtraLanguageMap;
+import com.nowandfuture.mod.core.forgeimpl.vanillaopt.PacketCapture;
 import net.minecraft.client.resources.ClientLanguageMap;
 import net.minecraft.client.resources.Language;
 import net.minecraft.resources.IResource;
@@ -21,7 +20,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.function.BiConsumer;
 
 @Mixin(ClientLanguageMap.class)
 public abstract class MixinClientLanguageMap {
@@ -55,9 +53,7 @@ public abstract class MixinClientLanguageMap {
         if(this.field_239495_c_.containsKey(text) && !conflictLanguageKeys.contains(text)) {
             cir.setReturnValue(this.field_239495_c_.get(text));
         }else{
-
             String id = PacketCapture.getNearestInvokeMod(16);
-
             if(!id.isEmpty()) {
                 cir.setReturnValue(ExtraLanguageMap.INSTANCE.get(text, id));
             }else{
